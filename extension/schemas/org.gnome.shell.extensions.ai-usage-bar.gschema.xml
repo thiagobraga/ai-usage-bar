@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.ai-usage-bar" path="/org/gnome/shell/extensions/ai-usage-bar/">
+    <key name="meter-style" type="s">
+      <choices><choice value="colored"/><choice value="unicode"/></choices>
+      <default>'colored'</default>
+      <summary>Meter style</summary>
+    </key>
+    <key name="meter-orientation" type="s">
+      <choices><choice value="auto"/><choice value="horizontal"/><choice value="vertical"/></choices>
+      <default>'auto'</default>
+      <summary>Meter orientation</summary>
+      <description>Automatic uses vertical colored bars and horizontal Unicode bars.</description>
+    </key>
+    <key name="popup-opacity" type="i">
+      <range min="35" max="100"/>
+      <default>82</default>
+      <summary>Popup opacity</summary>
+      <description>Transparency percentage for the AI Usage Bar popup surface.</description>
+    </key>
+    <key name="refresh-interval-seconds" type="i">
+      <range min="0" max="3600"/>
+      <default>60</default>
+      <summary>Refresh interval</summary>
+      <description>Provider refresh interval in seconds, with a minimum of 30 seconds. Zero means manual refresh only.</description>
+    </key>
+    <key name="merge-icons" type="b">
+      <default>true</default>
+      <summary>Merge provider icons</summary>
+      <description>Show one combined panel indicator instead of one indicator per provider.</description>
+    </key>
+    <key name="compact-mode" type="b">
+      <default>false</default>
+      <summary>Compact mode</summary>
+      <description>Use denser spacing in the popup.</description>
+    </key>
+    <key name="enabled-providers" type="as">
+      <default>['claude', 'codex']</default>
+      <summary>Enabled providers</summary>
+      <description>Provider identifiers enabled in the popup and refresh loop.</description>
+    </key>
+    <key name="openrouter-api-key" type="s">
+      <default>''</default>
+      <summary>OpenRouter API key</summary>
+      <description>API key for OpenRouter balance and usage queries. Leave empty to disable.</description>
+    </key>
+  </schema>
+</schemalist>
