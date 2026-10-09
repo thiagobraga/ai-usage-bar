@@ -1,0 +1,24 @@
+services:
+  site:
+    build:
+      context: .
+      dockerfile: .docker/Dockerfile
+    image: ai-usage-bar-site:local
+    ports:
+      - "${SITE_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      NEXT_TELEMETRY_DISABLED: "1"
+      HOSTNAME: 0.0.0.0
+      PORT: "3000"
+    networks: [proxy]
+    labels:
+      traefik.enable: true
+      traefik.http.routers.ai-usage-bar-router.rule: Host(`ai-usage-bar.local`)
+      traefik.http.routers.ai-usage-bar-router.entrypoints: websecure
+      traefik.http.routers.ai-usage-bar-router.tls: true
+      traefik.http.services.ai-usage-bar-service.loadbalancer.server.port: 3000
+
+networks:
+  proxy:
+    external: true
