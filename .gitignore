@@ -25,3 +25,6 @@ yarn-error.log*
 
 # OS/editor noise
 .DS_Store
+
+# GNOME schemas build artifact
+gschemas.compiled
