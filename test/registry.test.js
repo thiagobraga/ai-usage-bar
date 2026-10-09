@@ -1,0 +1,70 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {ProviderRegistry} from '../extension/providerRegistry.js';
+
+const settings = {get_strv: () => ['claude', 'codex']};
+test('a failed provider does not block the other or invent usage', async () => {
+  const registry = new ProviderRegistry();
+  registry.register({id: 'claude', isConfigured: true, fetch: async () => { throw Error('offline'); }});
+  registry.register({id: 'codex', isConfigured: true, fetch: async () => ({id: 'codex', status: 'ok', sessions: [{name: 'Session', usedPercent: 0}]})});
+  await registry.refreshAll(settings);
+  assert.equal(registry.getCached('claude').status, 'error');
+  assert.deepEqual(registry.getCached('claude').sessions, []);
+  assert.equal(registry.getCached('codex').sessions[0].usedPercent, 0);
+  registry.destroy();
+});
+
+test('disabling cancels providers and late completions do not repopulate cache', async () => {
+  const registry = new ProviderRegistry();
+  let finish;
+  let destroyed = false;
+  registry.register({id: 'claude', isConfigured: true,
+    fetch: () => new Promise(resolve => { finish = resolve; }),
+    destroy: () => { destroyed = true; }});
+  const refresh = registry.refreshAll(settings);
+  registry.destroy();
+  finish({id: 'claude', status: 'ok'});
+  await refresh;
+  assert.equal(destroyed, true);
+  assert.equal(registry.getCached('claude'), null);
+});
+
+const claudeOnly = {get_strv: () => ['claude']};
+const good = {id: 'claude', status: 'ok', lastUpdated: new Date(), sessions: [{name: 'Session', usedPercent: 12}]};
+const failure = errorKind => ({id: 'claude', status: 'error', errorKind, sessions: [], error: errorKind});
+
+test('transient failure keeps last good reading as stale', async () => {
+  const registry = new ProviderRegistry();
+  const queue = [good, failure('unavailable')];
+  registry.register({id: 'claude', isConfigured: true, fetch: async () => queue.shift()});
+  await registry.refreshAll(claudeOnly);
+  await registry.refreshAll(claudeOnly);
+  const cached = registry.getCached('claude');
+  assert.equal(cached.status, 'stale');
+  assert.equal(cached.sessions[0].usedPercent, 12);
+  assert.equal(cached.errorKind, 'unavailable');
+  registry.destroy();
+});
+
+test('auth failure replaces last good reading', async () => {
+  const registry = new ProviderRegistry();
+  const queue = [good, failure('expired')];
+  registry.register({id: 'claude', isConfigured: true, fetch: async () => queue.shift()});
+  await registry.refreshAll(claudeOnly);
+  await registry.refreshAll(claudeOnly);
+  assert.equal(registry.getCached('claude').status, 'error');
+  registry.destroy();
+});
+
+test('rate limit pauses background refresh; manual refresh bypasses', async () => {
+  const registry = new ProviderRegistry();
+  let calls = 0;
+  const queue = [failure('rate-limited'), good];
+  registry.register({id: 'claude', isConfigured: true, fetch: async () => { calls++; return queue.shift(); }});
+  await registry.refreshAll(claudeOnly);
+  await registry.refreshAll(claudeOnly);
+  assert.equal(calls, 1);
+  assert.equal((await registry.refreshOne('claude', claudeOnly)).status, 'ok');
+  assert.equal(calls, 2);
+  registry.destroy();
+});
