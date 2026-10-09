@@ -1,0 +1,9 @@
+{
+  "uuid": "ai-usage-bar@local",
+  "name": "AI Usage Bar",
+  "description": "AI coding-provider usage, reset windows, cost, and status in the GNOME top panel.",
+  "shell-version": ["46"],
+  "version": 1,
+  "settings-schema": "org.gnome.shell.extensions.ai-usage-bar",
+  "url": "https://github.com/local/ai-usage-bar"
+}
