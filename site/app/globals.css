@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+/* ── Design tokens — dark (default) ─────────────────────────── */
+:root {
+  --bg-0:       oklch(10.5% 0.012 262);
+  --bg-1:       oklch(14.5% 0.014 262);
+  --bg-2:       oklch(19%   0.016 262);
+  --bg-3:       oklch(26%   0.018 262);
+  --bg-4:       oklch(34%   0.020 262);
+  --text-0:     oklch(93%   0.006 262);
+  --text-1:     oklch(70%   0.012 262);
+  --text-2:     oklch(48%   0.015 262);
+  --amber:      oklch(74%   0.155  65);
+  --amber-dim:  oklch(55%   0.115  65);
+  --amber-bg:   oklch(22%   0.05   65);
+  --green:      oklch(71%   0.175 150);
+  --green-bg:   oklch(18%   0.045 150);
+  --nav-bg:     oklch(10.5% 0.012 262 / 0.88);
+  --nav-border: oklch(26%   0.018 262 / 0.5);
+}
+
+/* ── Design tokens — light ───────────────────────────────────── */
+[data-theme="light"] {
+  --bg-0:       oklch(97%   0.007 262);
+  --bg-1:       oklch(93%   0.009 262);
+  --bg-2:       oklch(88%   0.011 262);
+  --bg-3:       oklch(79%   0.014 262);
+  --bg-4:       oklch(68%   0.016 262);
+  --text-0:     oklch(14%   0.018 262);
+  --text-1:     oklch(35%   0.020 262);
+  --text-2:     oklch(55%   0.018 262);
+  --amber:      oklch(46%   0.155  65);
+  --amber-dim:  oklch(38%   0.115  65);
+  --amber-bg:   oklch(92%   0.055  72);
+  --green:      oklch(36%   0.175 150);
+  --green-bg:   oklch(91%   0.048 150);
+  --nav-bg:     oklch(97%   0.007 262 / 0.92);
+  --nav-border: oklch(79%   0.014 262 / 0.7);
+}
+
+/* ── Tailwind theme bridge ───────────────────────────────────── */
+@theme inline {
+  --color-bg-0:      var(--bg-0);
+  --color-bg-1:      var(--bg-1);
+  --color-bg-2:      var(--bg-2);
+  --color-bg-3:      var(--bg-3);
+  --color-bg-4:      var(--bg-4);
+  --color-text-0:    var(--text-0);
+  --color-text-1:    var(--text-1);
+  --color-text-2:    var(--text-2);
+  --color-amber:     var(--amber);
+  --color-amber-dim: var(--amber-dim);
+  --color-amber-bg:  var(--amber-bg);
+  --color-green:     var(--green);
+  --color-green-bg:  var(--green-bg);
+  --font-display:    var(--font-red-hat-display);
+  --font-body:       var(--font-red-hat-text);
+  --font-mono:       var(--font-red-hat-mono);
+}
+
+/* ── Base ────────────────────────────────────────────────────── */
+html {
+  -webkit-font-smoothing: antialiased;
+  scroll-behavior: smooth;
+  scrollbar-color: var(--bg-3) transparent;
+}
+
+body {
+  background: var(--bg-0);
+  color: var(--text-0);
+  font-family: var(--font-red-hat-text), system-ui, sans-serif;
+}
+
+/* ── Scroll reveal ───────────────────────────────────────────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.55s ease-out, transform 0.55s ease-out;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
