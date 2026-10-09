@@ -1,0 +1,16 @@
+{
+  "name": "agent-visier",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "ext:install": "./scripts/install.sh",
+    "ext:watch": "./scripts/install.sh -w",
+    "ext:package": "./scripts/install.sh -p",
+    "site:dev": "npm --prefix site run dev",
+    "site:build": "npm --prefix site run build",
+    "site:lint": "npm --prefix site run lint"
+  },
+  "devDependencies": {}
+}
