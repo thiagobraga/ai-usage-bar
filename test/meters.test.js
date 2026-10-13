@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {meterValue, meterSeverity, unicodeSegments, meterOrientation, usageSummary} from '../extension/meterModel.js';
+import {meterValue, meterSeverity, meterColor, unicodeSegments, meterOrientation, usageSummary} from '../extension/meterModel.js';
 
 const result = (percent, status = 'ok') => ({label: 'Claude', status,
   sessions: [{name: 'Session', usedPercent: percent}, {name: 'Weekly', usedPercent: 60}]});
@@ -53,4 +53,19 @@ test('severity: low use is green, high use is red, unavailable is unknown', () =
   assert.equal(meterSeverity(85), 'high');
   assert.equal(meterSeverity(100), 'high');
   assert.equal(meterSeverity(null), 'unknown');
+});
+
+test('colour: green to 50, yellow 60, orange 80, near-red 90, pure red 100', () => {
+  assert.equal(meterColor(null), null);
+  assert.equal(meterColor(0), '#19d39b');
+  assert.equal(meterColor(50), '#19d39b');
+  assert.equal(meterColor(60), '#f5d90a');
+  assert.equal(meterColor(80), '#ff8c00');
+  assert.equal(meterColor(85), '#ff5f00');
+  assert.equal(meterColor(90), '#ff2a00');
+  assert.equal(meterColor(95), '#ff1100');
+  assert.equal(meterColor(100), '#ff0000');
+  // 55 is halfway green->yellow, 70 halfway yellow->orange
+  assert.equal(meterColor(55), '#87d653');
+  assert.equal(meterColor(70), '#fab305');
 });

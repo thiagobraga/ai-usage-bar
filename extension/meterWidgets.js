@@ -1,7 +1,7 @@
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
-import {meterValue, meterSeverity, meterOrientation, unicodeSegments, usageSummary} from './meterModel.js';
+import {meterValue, meterSeverity, meterColor, meterOrientation, unicodeSegments, usageSummary} from './meterModel.js';
 
 export function providerMeters(result, style, orientation, path) {
   const vertical = meterOrientation(style, orientation) === 'vertical';
@@ -32,8 +32,8 @@ export function providerMeters(result, style, orientation, path) {
         style_class: `ai-meter-track ${vertical ? 'vertical' : 'horizontal'}`});
       const fill = new St.Widget({style_class: `ai-meter-fill ${meterSeverity(value)}`,
         visible: value > 0});
-      fill.set_style(vertical ? `height: ${18 * value / 100}px; width: 4px;` :
-        `width: ${28 * value / 100}px; height: 4px;`);
+      fill.set_style((vertical ? `height: ${18 * value / 100}px; width: 4px;` :
+        `width: ${28 * value / 100}px; height: 4px;`) + ` background-color: ${meterColor(value)};`);
       if (vertical) track.add_child(new St.Widget({y_expand: true}));
       track.add_child(fill);
       meters.add_child(track);

@@ -16,9 +16,34 @@ export function meterSeverity(percent) {
   return 'low';
 }
 
+// Fill colour stops: green until 50%, blending through yellow (60), orange (80)
+// and near-red (90) to pure red (100). Values between stops are interpolated.
+const COLOR_STOPS = [
+  [50, [0x19, 0xd3, 0x9b]],
+  [60, [0xf5, 0xd9, 0x0a]],
+  [80, [0xff, 0x8c, 0x00]],
+  [85, [0xff, 0x5f, 0x00]],
+  [90, [0xff, 0x2a, 0x00]],
+  [95, [0xff, 0x11, 0x00]],
+  [100, [0xff, 0x00, 0x00]],
+];
+
+export function meterColor(percent) {
+  if (percent === null) return null;
+  const hex = rgb => `#${rgb.map(c => Math.round(c).toString(16).padStart(2, '0')).join('')}`;
+  if (percent <= COLOR_STOPS[0][0]) return hex(COLOR_STOPS[0][1]);
+  for (let i = 1; i < COLOR_STOPS.length; i++) {
+    const [hi, to] = COLOR_STOPS[i];
+    if (percent > hi) continue;
+    const [lo, from] = COLOR_STOPS[i - 1];
+    const t = (percent - lo) / (hi - lo);
+    return hex(from.map((c, k) => c + (to[k] - c) * t));
+  }
+  return hex(COLOR_STOPS.at(-1)[1]);
+}
+
 export function unicodeSegments(percent, count = 5) {
-  if (percent === null) return '—';
-  const filled = Math.round(Math.max(0, Math.min(100, percent)) * count / 100);
+  const filled = percent === null ? 0 : Math.round(Math.max(0, Math.min(100, percent)) * count / 100);
   return '■'.repeat(filled) + '·'.repeat(count - filled);
 }
 
