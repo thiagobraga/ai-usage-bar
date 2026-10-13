@@ -9,7 +9,8 @@ export function providerMeters(result, style, orientation, path) {
     y_align: Clutter.ActorAlign.CENTER, accessible_name: usageSummary(result)});
   box.add_child(new St.Icon({
     gicon: Gio.icon_new_for_string(`${path}/icons/${result.id}.svg`),
-    icon_size: 16, style_class: `ai-brand ai-brand-${result.id}`,
+    icon_size: result.id === 'antigravity' ? 22 : 16,
+    style_class: `ai-brand ai-brand-${result.id}`,
     y_align: Clutter.ActorAlign.CENTER,
   }));
   const meters = new St.BoxLayout({vertical: !vertical,
