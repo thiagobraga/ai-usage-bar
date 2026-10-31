@@ -2,10 +2,11 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Soup from 'gi://Soup?version=3.0';
 import {parseCodexJsonl} from './usageData.js';
+import {debugLog, describeError} from '../debug.js';
 
 const PRIORITY = GLib.PRIORITY_DEFAULT;
 export class UsageError extends Error {
-  constructor(code) { super(code); this.code = code; }
+  constructor(code, detail = '') { super(code); this.code = code; this.detail = detail; }
 }
 
 // One deadline covers all work in each operation, including DNS and local I/O.
@@ -32,7 +33,7 @@ export class UsageIO {
       if (cancellable.is_cancelled()) throw new UsageError(timedOut ? 'timeout' : 'cancelled');
       if (error.matches?.(Gio.io_error_quark(), Gio.IOErrorEnum.TIMED_OUT)) throw new UsageError('timeout');
       if (error instanceof UsageError) throw error;
-      throw new UsageError('unavailable');
+      throw new UsageError('unavailable', describeError(error));
     } finally {
       if (!timedOut) GLib.source_remove(timer);
       this.pending.delete(cancellable);
@@ -44,7 +45,7 @@ export class UsageIO {
   }
 }
 
-function asyncCall(object, method, finish, args) {
+export function asyncCall(object, method, finish, args) {
   return new Promise((resolve, reject) => object[method](...args, (source, result) => {
     try { resolve(source[finish](result)); } catch (error) { reject(error); }
   }));
@@ -80,18 +81,35 @@ export async function readJson(path, cancellable) {
     throw error;
   } finally { if (stream) await close(stream); }
 }
-export async function getUsage(url, headers, cancellable) {
+// GJS throws for codes missing from Soup.Status (e.g. 429); the number is in the message.
+function reasonPhrase(message) {
+  try { return message.get_reason_phrase() ?? ''; } catch { return ''; }
+}
+function httpStatus(message) {
+  try { return message.get_status(); }
+  catch (error) {
+    const code = Number(/^(\d+) is not a valid value/.exec(error?.message ?? '')?.[1]);
+    if (code) return code;
+    throw error;
+  }
+}
+// A non-null body sends a JSON POST instead of a GET.
+export async function getUsage(url, headers, cancellable, body = null) {
   const session = new Soup.Session({timeout: 4});
-  const message = Soup.Message.new('GET', url);
+  const message = Soup.Message.new(body === null ? 'GET' : 'POST', url);
   message.set_flags(Soup.MessageFlags.NO_REDIRECT);
+  if (body !== null) message.set_request_body_from_bytes('application/json',
+    new GLib.Bytes(new TextEncoder().encode(JSON.stringify(body))));
   for (const [name, value] of Object.entries(headers)) message.request_headers.replace(name, value);
   message.request_headers.replace('Accept', 'application/json');
   let stream;
   try {
     stream = await asyncCall(session, 'send_async', 'send_finish', [message, PRIORITY, cancellable]);
-    const status = message.get_status();
-    if (status === 401 || status === 403) throw new UsageError('auth-error');
-    if (status !== 200) throw new UsageError(status === 429 ? 'rate-limited' : 'unavailable');
+    const status = httpStatus(message);
+    debugLog('http', message.get_method(), url, '->', status, reasonPhrase(message));
+    if (status === 401 || status === 403) throw new UsageError('auth-error', `HTTP ${status}`);
+    if (status !== 200) throw new UsageError(status === 429 ? 'rate-limited' : 'unavailable',
+      `HTTP ${status} ${reasonPhrase(message)}`.trim());
     try { return JSON.parse(await read(stream, cancellable, 1024 * 1024)); }
     catch (error) {
       if (error instanceof SyntaxError) throw new UsageError('invalid-response');
