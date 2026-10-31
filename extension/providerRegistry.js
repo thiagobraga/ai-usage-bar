@@ -7,6 +7,7 @@
  */
 
 import {ProviderStatus, makeResult} from './provider.js';
+import {debugLog} from './debug.js';
 
 const PROVIDER_TIMEOUT_MS = 5000;
 const RATE_LIMIT_BACKOFF_MS = 120000;
@@ -132,7 +133,7 @@ export class ProviderRegistry {
    */
   _store(provider, result) {
     if (result.status === ProviderStatus.ERROR) {
-      console.warn(`[ai-usage-bar] ${provider.id}: ${result.errorKind ?? 'error'}: ${result.error ?? ''}`);
+      console.warn(`[ai-usage-bar] ${provider.id}: ${result.errorKind ?? 'error'}: ${result.error ?? ''}${result.errorDetail ? ` (${result.errorDetail})` : ''}`);
       if (result.errorKind === 'rate-limited') this._backoffUntil.set(provider.id, Date.now() + RATE_LIMIT_BACKOFF_MS);
       const previous = this._cache.get(provider.id);
       if (TRANSIENT_ERRORS.has(result.errorKind) && previous?.sessions?.length &&
@@ -190,20 +191,24 @@ export class ProviderRegistry {
       });
     }
 
+    const started = Date.now();
+    debugLog('registry', provider.id, 'fetch start');
+    const timeoutMs = provider.timeoutMs ?? PROVIDER_TIMEOUT_MS;
     return new Promise((resolve, reject) => {
       let settled = false;
       const timer = setTimeout(() => {
         if (!settled) {
           settled = true;
-          reject(new Error(`Provider ${provider.id} timed out after ${PROVIDER_TIMEOUT_MS}ms`));
+          reject(new Error(`Provider ${provider.id} timed out after ${timeoutMs}ms`));
         }
-      }, PROVIDER_TIMEOUT_MS);
+      }, timeoutMs);
 
       provider.fetch(settings)
         .then(result => {
           if (!settled) {
             settled = true;
             clearTimeout(timer);
+            debugLog('registry', provider.id, 'fetch done in', Date.now() - started, 'ms status', result?.status);
             resolve(result);
           }
         })
@@ -211,6 +216,7 @@ export class ProviderRegistry {
           if (!settled) {
             settled = true;
             clearTimeout(timer);
+            debugLog('registry', provider.id, 'fetch threw after', Date.now() - started, 'ms', err?.message);
             reject(err);
           }
         });
