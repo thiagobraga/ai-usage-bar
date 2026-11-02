@@ -35,6 +35,11 @@ test('install script uses UUID and compiles schemas', () => {
   assert.match(install, /gnome-extensions enable/);
 });
 
+test('indicator aligns popup menu with panel icons', () => {
+  const extension = read('extension/extension.js');
+  assert.match(extension, /menu\.setSourceAlignment/);
+});
+
 test('README documents one-command install and tests', () => {
   const readme = read('README.md');
   assert.match(readme, /\.\/scripts\/install\.sh/);
