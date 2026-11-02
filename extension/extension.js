@@ -1,4 +1,5 @@
 import St from 'gi://St';
+import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
@@ -19,7 +20,9 @@ export default class AIUsageBarExtension extends Extension {
     this._registry = new ProviderRegistry();
     this._registry.register(new ClaudeProvider());
     this._registry.register(new CodexProvider());
+    const isRtl = Clutter.get_default_text_direction() === Clutter.TextDirection.RTL;
     this._indicator = new PanelMenu.Button(0.0, this.metadata.name, false);
+    this._indicator.menu.setSourceAlignment(isRtl ? 1.0 : 0.0);
     this._panelBox = new St.BoxLayout({style_class: 'ai-panel-box'});
     this._indicator.add_child(this._panelBox);
     Main.panel.addToStatusArea(this.uuid, this._indicator);
