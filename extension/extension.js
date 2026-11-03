@@ -4,11 +4,10 @@ import GLib from 'gi://GLib';
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
-import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import { setDebug } from './core/debug.js';
 import { providerMeters } from './ui/meterWidgets.js';
 import { buildPanelMenu } from './ui/panelMenu.js';
-import { NavigationItem, PersistentSwitch, previewComponent } from './ui/panelMenuWidgets.js';
+import * as dashboardWidgets from './ui/dashboardWidgets.js';
 import { panelDescription, visibleComponents } from './ui/panelComponents.js';
 import { makeResult } from './core/provider.js';
 import { ProviderRegistry } from './core/providerRegistry.js';
@@ -39,18 +38,14 @@ export default class AIUsageBarExtension extends Extension {
       this._updatePanel();
       if (key === 'refresh-interval-seconds') this._startRefreshLoop();
       if (['enabled-providers', 'panel-components'].includes(key)) {
-        if (!this._indicator.menu.isOpen) this._loading.sync(visibleProviderIds(this._settings));
-        if (key === 'enabled-providers' && !this._indicator.menu.isOpen) this._buildMenu();
         this._refreshAdded();
       }
+      this._disposeMenu?.sync();
     });
     this._menuStateId = this._indicator.menu.connect('open-state-changed', (_menu, open) => {
-      if (!open) {
-        this._disposeMenu?.();
-        this._disposeMenu = null;
-        this._loading.sync(visibleProviderIds(this._settings));
-        this._buildMenu();
-      }
+      this._refreshAdded();
+      if (open) this._updateMenuReadings();
+      else this._buildMenu();
     });
     this._updatePanel();
     this._buildMenu();
@@ -58,8 +53,8 @@ export default class AIUsageBarExtension extends Extension {
     this._startRefreshLoop();
     // Age observations even when automatic network refresh is disabled.
     this._ageTimer = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 30, () => {
-      // Rebuilding actors is costly; only do it when a status flipped (e.g. ok to stale).
-      if (this._statusKey() !== this._shownStatusKey) this._updatePanel();
+      this._updatePanel();
+      if (this._indicator.menu.isOpen) this._updateMenuReadings();
       return GLib.SOURCE_CONTINUE;
     });
   }
@@ -100,14 +95,15 @@ export default class AIUsageBarExtension extends Extension {
 
   // Fetch only providers that just became visible; cosmetic toggles never hit the network.
   _refreshAdded() {
-    const ids = visibleProviderIds(this._settings);
+    const ids = visibleProviderIds(this._settings, this._indicator.menu.isOpen);
+    this._loading.sync(ids);
     const added = ids.filter(id => !this._visibleIds.has(id));
     this._visibleIds = new Set(ids);
     if (added.length) this._doRefresh(added);
   }
 
-  _statusKey() {
-    return this._results().map(result => `${result.id}:${result.status}`).join(',');
+  _updateMenuReadings() {
+    this._disposeMenu?.updateAll(this._results(true));
   }
 
   async _doRefresh(only = null) {
@@ -119,22 +115,19 @@ export default class AIUsageBarExtension extends Extension {
     }
     this._refreshing = registry;
     try {
-      const ids = only ?? visibleProviderIds(this._settings);
+      const ids = only ?? visibleProviderIds(this._settings, this._indicator.menu.isOpen);
       const imports = await Promise.allSettled(ids.map(id => this._loading.ensure(id)));
       for (const outcome of imports) {
         if (outcome.status === 'rejected')
           console.warn(`[ai-usage-bar] provider load failed: ${outcome.reason?.message ?? outcome.reason}`);
       }
       if (this._registry !== registry) return;
-      await registry.refreshAll(this._settings, ids, () => {
+      await registry.refreshAll(this._settings, ids, id => {
         if (this._registry !== registry) return;
         this._updatePanel();
-        for (const result of this._results()) this._disposeMenu?.update(result);
+        const result = this._results().find(provider => provider.id === id);
+        if (result && this._indicator.menu.isOpen) this._disposeMenu?.update(result);
       });
-      if (this._registry !== registry) return;
-      // Final pass covers backed-off providers that emitted no per-provider update.
-      this._updatePanel();
-      for (const result of this._results()) this._disposeMenu?.update(result);
     } catch (error) {
       console.warn(`[ai-usage-bar] provider load failed: ${error?.message ?? error}`);
     } finally {
@@ -148,9 +141,9 @@ export default class AIUsageBarExtension extends Extension {
     }
   }
 
-  _results() {
+  _results(all = false) {
     const enabled = this._settings.get_strv('enabled-providers');
-    return PROVIDERS.filter(provider => enabled.includes(provider.id)).map(provider => {
+    return PROVIDERS.filter(provider => all || enabled.includes(provider.id)).map(provider => {
       const cached = this._registry.getCached(provider.id);
       const result = cached ?? makeResult({id: provider.id, label: provider.label,
         error: this._refreshing ? 'Checking usage…' : 'Usage unavailable'});
@@ -163,7 +156,6 @@ export default class AIUsageBarExtension extends Extension {
     if (!this._indicator) return;
     this._panelBox.destroy_all_children();
     const results = this._results();
-    this._shownStatusKey = this._statusKey();
     const visible = this._settings.get_strv('panel-components');
     const orientations = this._settings.get_strv('panel-orientations');
     const fallback = this._settings.get_string('meter-orientation');
@@ -187,33 +179,23 @@ export default class AIUsageBarExtension extends Extension {
     this._settings.set_strv('panel-components', selected);
   }
 
-  _setPanelOrientation(id, orientation) {
-    const selected = this._settings.get_strv('panel-orientations')
-      .filter(value => value !== `${id}=horizontal` && value !== `${id}=vertical`);
-    selected.push(`${id}=${orientation}`);
-    this._settings.set_strv('panel-orientations', selected);
-  }
-
   _buildMenu() {
     if (!this._indicator) return;
-    const menu = this._indicator.menu;
     this._disposeMenu?.();
-    menu.removeAll();
-    const preview = (row, result, choice) => previewComponent(row, result, choice, this._settings, this.path);
-    this._disposeMenu = buildPanelMenu(menu, this._results(), this._settings, PopupMenu,
-      {NavigationItem, PersistentSwitch}, {
-        setComponent: (id, state) => this._setPanelComponent(id, state),
-        setOrientation: (id, value) => this._setPanelOrientation(id, value),
-        load: async id => {
-          const provider = await this._loading.ensure(id);
-          if (!provider || !this._indicator?.menu.isOpen) return null;
-          return this._registry.getCached(id) ?? await this._registry.refreshOne(id, this._settings);
+    this._disposeMenu = buildPanelMenu(this._indicator.menu, this._results(true), this._settings,
+      dashboardWidgets, {
+        path: this.path,
+        setProvider: (id, enabled) => {
+          const ids = this._settings.get_strv('enabled-providers').filter(value => value !== id);
+          if (enabled) ids.push(id);
+          this._settings.set_strv('enabled-providers', ids);
         },
-        release: (keep = null) => this._loading.sync([
-          ...visibleProviderIds(this._settings), ...(keep ? [keep] : []),
-        ]),
-        preview,
-        updatePreview: preview,
+        setComponent: (id, state) => this._setPanelComponent(id, state),
+        setOrientation: (id, value) => {
+          const values = this._settings.get_strv('panel-orientations')
+            .filter(entry => entry !== `${id}=horizontal` && entry !== `${id}=vertical`);
+          this._settings.set_strv('panel-orientations', [...values, `${id}=${value}`]);
+        },
         refresh: () => this._doRefresh(),
         settings: () => this.openPreferences(),
       });

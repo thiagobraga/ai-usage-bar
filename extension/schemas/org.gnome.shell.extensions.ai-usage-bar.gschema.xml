@@ -13,7 +13,7 @@
       <description>Orientation for panel meters without an individual override.</description>
     </key>
     <key name="panel-components" type="as">
-      <default>['claude:icon', 'claude:Session', 'claude:Weekly', 'codex:icon', 'codex:Session', 'codex:Weekly', 'antigravity:icon', 'antigravity:Session', 'antigravity:Weekly', 'opencode:icon', 'opencode:activity', 'opencode-openai:icon', 'opencode-openai:Session', 'opencode-openai:Weekly']</default>
+      <default>['claude:icon', 'claude:Session', 'claude:Weekly', 'codex:icon', 'codex:Session', 'codex:Weekly', 'antigravity:icon', 'antigravity:Session', 'antigravity:Weekly', 'opencode:icon', 'opencode:activity']</default>
       <summary>Visible panel components</summary>
       <description>Individual icons, quota windows, and activity text shown in the panel.</description>
     </key>

@@ -29,7 +29,7 @@ export default class AIUsageBarPreferences extends ExtensionPreferences {
     display.add(whiteIcons);
     page.add(display);
     const providers = new Adw.PreferencesGroup({title: 'Providers',
-      description: 'OpenCode activity and OpenCode OpenAI subscription quota are separate.'});
+      description: 'OpenCode shows 7-day activity and, when signed in to ChatGPT, its OpenAI quota.'});
     for (const {id, label, prefsTitle} of PROVIDERS) {
       const title = prefsTitle ?? label;
       const row = new Adw.SwitchRow({title, active: settings.get_strv('enabled-providers').includes(id)});
@@ -60,11 +60,9 @@ export default class AIUsageBarPreferences extends ExtensionPreferences {
     privacy.add(new Adw.ActionRow({title: 'Codex',
       subtitle: 'Codex credentials → chatgpt.com. Local session quota snapshots are a fallback and show their observation time.'}));
     privacy.add(new Adw.ActionRow({title: 'Antigravity',
-      subtitle: 'Antigravity CLI sign-in from the GNOME keyring → cloudcode-pa.googleapis.com. Gemini and Claude/GPT groups each have 5-hour and weekly limits; the panel shows the most-used of each.'}));
+      subtitle: 'Antigravity CLI sign-in from the GNOME keyring → cloudcode-pa.googleapis.com. Shows available group buckets and individual model quotas; model resets do not identify a 5-hour or weekly window. Sign in with agy if the token expires.'}));
     privacy.add(new Adw.ActionRow({title: 'OpenCode',
-      subtitle: 'OpenCode CLI session statistics and connected provider names from local auth.json. Shows 7-day tokens and cost; no quota percentage or credential values are shown.'}));
-    privacy.add(new Adw.ActionRow({title: 'OpenCode · OpenAI',
-      subtitle: 'Reads the active OpenCode ChatGPT OAuth sign-in from its local database (or legacy auth.json) and requests quota from chatgpt.com. Token-sharing sign-ins cannot show ChatGPT plan quota. Requires sqlite3 for OpenCode V2; credentials are not copied or refreshed.'}));
+      subtitle: 'OpenCode CLI session statistics and connected provider names from local auth.json give 7-day tokens and cost. Its active ChatGPT OAuth sign-in (local database or legacy auth.json) is used to request OpenAI quota from chatgpt.com. Token-sharing sign-ins cannot show ChatGPT plan quota. Requires sqlite3 for OpenCode V2; credentials are not copied, shown or refreshed.'}));
     privacy.add(new Adw.ActionRow({title: 'Authentication',
       subtitle: 'If your session expires, sign in again with the corresponding CLI. The extension does not change your credentials.'}));
     page.add(privacy);

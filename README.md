@@ -19,7 +19,18 @@ npm test                         # parser, meter, registry and metadata tests
 
 After installing changed JavaScript, restart the Shell on X11 or log out/in on Wayland. Recompiling schemas and installing is handled by the script. See [scripts/README.md](scripts/README.md).
 
-Default meter style, orientation and icons are configured through **Settings → Panel meters**; individual visibility and orientation are controlled from the panel menu. Claude, Codex, and Antigravity are enabled by default; OpenCode activity and OpenCode OpenAI quota are separate opt-in switches.
+Click the panel indicator to see usage for each enabled provider. On quota cards the center shows the percentage of the five-hour limit used. The outer ring tracks five-hour usage and the inner ring tracks weekly usage. OpenCode activity shows its seven-day token count.
+
+Expand a provider row to see its limits and reset times. Select any combination of component previews to show them together in the top bar. The switch beside the provider name turns the whole provider off or on and remembers its component choices. Use **Settings → Panel meters** for default appearance. OpenCode is one provider: its row shows 7-day token activity and, when OpenCode is signed in to ChatGPT, the OpenAI 5-hour and weekly quota of the active account.
+
+Antigravity lists every public model quota returned by `fetchAvailableModels` in its expanded row, plus the 5-hour and weekly groups returned by `retrieveUserQuotaSummary`. Model quotas have their own reset times but no declared window, so they are not used to invent missing group readings. A group absent from the API remains unavailable even if the CLI displays it. If every Antigravity reading shows `-`, check the provider menu for a sign-in error and run `agy` to refresh an expired CLI token.
+
+[Provider overview](docs/screens/dropdown-overview.png)
+
+| Expanded provider | Dark theme | Light theme |
+| --- | --- | --- |
+| Desktop | [Screenshot](docs/screens/dropdown-desktop-dark.png) | [Screenshot](docs/screens/dropdown-desktop-light.png) |
+| 390px | [Screenshot](docs/screens/dropdown-390-dark.png) | [Screenshot](docs/screens/dropdown-390-light.png) |
 
 ## Code
 
