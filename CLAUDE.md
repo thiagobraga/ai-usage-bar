@@ -80,7 +80,7 @@ Tests sit beside the modules they cover (`*.test.js`); `extension/metadata.test.
 
 ### GSettings schema
 
-Key provider settings: `enabled-providers` (strv), `openrouter-api-key` (string), `popup-opacity` (int 35–100), `refresh-interval-seconds` (int), `compact-mode` (bool), `merge-icons` (bool).
+Key settings: `enabled-providers` (strv), `refresh-interval-seconds` (int), `panel-components` and `panel-orientations` (strv), `meter-orientation` (string), `white-icons` and `debug-logging` (bool). Provider secrets never go in GSettings.
 
 After editing the schema XML, run `glib-compile-schemas extension/schemas/` then reinstall.
 

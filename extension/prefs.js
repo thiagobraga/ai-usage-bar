@@ -8,10 +8,10 @@ export default class AIUsageBarPreferences extends ExtensionPreferences {
     const settings = this.getSettings();
     const page = new Adw.PreferencesPage({title: 'AI Usage Bar', icon_name: 'preferences-system-symbolic'});
     const display = new Adw.PreferencesGroup({title: 'Panel meters',
-      description: 'Session first, weekly second. Colored bars use green for session and amber for weekly. — means unavailable; ~ means stale.'});
+      description: 'Choose individual icons, quota windows and their orientation in the panel menu under Components.'});
     for (const [key, title, labels, values] of [
       ['meter-style', 'Style', ['Colored bars', 'Unicode bars'], ['colored', 'unicode']],
-      ['meter-orientation', 'Orientation', ['Automatic (matches style)', 'Horizontal', 'Vertical'], ['auto', 'horizontal', 'vertical']],
+      ['meter-orientation', 'Default orientation', ['Horizontal', 'Vertical'], ['horizontal', 'vertical']],
     ]) {
       const row = new Adw.ComboRow({title, model: Gtk.StringList.new(labels)});
       row.selected = Math.max(0, values.indexOf(settings.get_string(key)));
@@ -22,10 +22,15 @@ export default class AIUsageBarPreferences extends ExtensionPreferences {
       window.connect('close-request', () => { settings.disconnect(id); return false; });
       display.add(row);
     }
+    const whiteIcons = new Adw.SwitchRow({title: 'White provider icons',
+      subtitle: 'Match system icons for Claude and Antigravity'});
+    settings.bind('white-icons', whiteIcons, 'active', Gio.SettingsBindFlags.DEFAULT);
+    display.add(whiteIcons);
     page.add(display);
     const providers = new Adw.PreferencesGroup({title: 'Providers',
-      description: 'Uses existing Claude Code and Codex sign-ins. No separate API key needed.'});
-    for (const [id, title] of [['claude', 'Claude'], ['codex', 'Codex']]) {
+      description: 'OpenCode activity and OpenCode OpenAI subscription quota are separate.'});
+    for (const [id, title] of [['claude', 'Claude'], ['codex', 'Codex'], ['antigravity', 'Antigravity'],
+      ['opencode', 'OpenCode activity'], ['opencode-openai', 'OpenCode · OpenAI quota']]) {
       const row = new Adw.SwitchRow({title, active: settings.get_strv('enabled-providers').includes(id)});
       row.connect('notify::active', () => {
         const current = settings.get_strv('enabled-providers').filter(value => value !== id);
@@ -40,7 +45,7 @@ export default class AIUsageBarPreferences extends ExtensionPreferences {
     }
     page.add(providers);
     const refresh = new Adw.PreferencesGroup({title: 'Refresh',
-      description: 'Updates while the extension is enabled. Provider values may arrive with a delay; observations older than five minutes are marked stale.'});
+      description: 'Only providers shown in the panel update in the background. Observations older than five minutes are marked stale.'});
     const interval = new Adw.SpinRow({title: 'Interval (seconds)',
       subtitle: '0 = manual only; otherwise at least 30 seconds',
       adjustment: new Gtk.Adjustment({lower: 0, upper: 3600, step_increment: 30, page_increment: 60})});
@@ -53,6 +58,12 @@ export default class AIUsageBarPreferences extends ExtensionPreferences {
       subtitle: 'Claude Code credentials → api.anthropic.com. Token counts are not treated as subscription quota.'}));
     privacy.add(new Adw.ActionRow({title: 'Codex',
       subtitle: 'Codex credentials → chatgpt.com. Local session quota snapshots are a fallback and show their observation time.'}));
+    privacy.add(new Adw.ActionRow({title: 'Antigravity',
+      subtitle: 'Antigravity CLI sign-in from the GNOME keyring → cloudcode-pa.googleapis.com. Gemini and Claude/GPT groups each have 5-hour and weekly limits; the panel shows the most-used of each.'}));
+    privacy.add(new Adw.ActionRow({title: 'OpenCode',
+      subtitle: 'OpenCode CLI session statistics and connected provider names from local auth.json. Shows 7-day tokens and cost; no quota percentage or credential values are shown.'}));
+    privacy.add(new Adw.ActionRow({title: 'OpenCode · OpenAI',
+      subtitle: 'Reads the active OpenCode ChatGPT OAuth sign-in from its local database (or legacy auth.json) and requests quota from chatgpt.com. Token-sharing sign-ins cannot show ChatGPT plan quota. Requires sqlite3 for OpenCode V2; credentials are not copied or refreshed.'}));
     privacy.add(new Adw.ActionRow({title: 'Authentication',
       subtitle: 'If your session expires, sign in again with the corresponding CLI. The extension does not change your credentials.'}));
     page.add(privacy);

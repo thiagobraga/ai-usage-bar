@@ -25,8 +25,10 @@ test('required extension files exist', () => {
 
 test('schema contains appearance and refresh settings', () => {
   const schema = read('extension/schemas/org.gnome.shell.extensions.ai-usage-bar.gschema.xml');
-  for (const key of ['popup-opacity', 'refresh-interval-seconds', 'merge-icons', 'compact-mode', 'enabled-providers'])
+  for (const key of ['refresh-interval-seconds', 'enabled-providers'])
     assert.match(schema, new RegExp(`name="${key}"`));
+  for (const key of ['popup-opacity', 'merge-icons', 'compact-mode', 'openrouter-api-key'])
+    assert.doesNotMatch(schema, new RegExp(`name="${key}"`));
   assert.match(schema, /<key name="white-icons" type="b">\s*<default>false<\/default>/);
   assert.match(schema, /<key name="meter-orientation" type="s">\s*<choices><choice value="horizontal"\/><choice value="vertical"\/><\/choices>\s*<default>'horizontal'<\/default>/);
   assert.match(schema, /<key name="panel-components" type="as">/);

@@ -19,7 +19,7 @@ npm test                         # parser, meter, registry and metadata tests
 
 After installing changed JavaScript, restart the Shell on X11 or log out/in on Wayland. Recompiling schemas and installing is handled by the script. See [scripts/README.md](scripts/README.md).
 
-Default meter style, orientation and icons are configured through **Settings → Panel meters**; individual visibility and orientation are controlled from the panel menu. Claude, Codex, and Antigravity are enabled by default; OpenCode activity and OpenCode OpenAI quota are separate opt-in switches. Legacy appearance/API-key schema keys remain for compatibility but are not exposed or used by this version.
+Default meter style, orientation and icons are configured through **Settings → Panel meters**; individual visibility and orientation are controlled from the panel menu. Claude, Codex, and Antigravity are enabled by default; OpenCode activity and OpenCode OpenAI quota are separate opt-in switches.
 
 ## Code
 
@@ -32,4 +32,4 @@ Default meter style, orientation and icons are configured through **Settings →
 - `extension/**/*.test.js`: Node tests sit beside the modules they cover; `extension/providers/fixtures/` holds sample responses. Install and package scripts exclude both tests and fixtures.
 - `site/`: separate website, unchanged by the meter work.
 
-The older Gemini/Cursor/OpenRouter modules remain on disk but are not registered or shown in this release. Bundled brand icon sources are listed in [extension/icons/README.md](extension/icons/README.md).
+Bundled brand icon sources are listed in [extension/icons/README.md](extension/icons/README.md).
