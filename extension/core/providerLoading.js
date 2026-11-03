@@ -2,8 +2,8 @@ export const PROVIDERS = [
   {id: 'claude', label: 'Claude', load: () => import('../providers/claude/claude.js')},
   {id: 'codex', label: 'Codex', load: () => import('../providers/codex/codex.js')},
   {id: 'antigravity', label: 'Antigravity', load: () => import('../providers/antigravity/antigravity.js')},
-  {id: 'opencode', label: 'OpenCode', load: () => import('../providers/opencode/opencode.js')},
-  {id: 'opencode-openai', label: 'OpenCode · OpenAI', load: () => import('../providers/opencode/opencodeOpenAI.js')},
+  {id: 'opencode', label: 'OpenCode', prefsTitle: 'OpenCode activity', load: () => import('../providers/opencode/opencode.js')},
+  {id: 'opencode-openai', label: 'OpenCode · OpenAI', prefsTitle: 'OpenCode · OpenAI quota', load: () => import('../providers/opencode/opencodeOpenAI.js')},
 ];
 
 export function visibleProviderIds(settings) {

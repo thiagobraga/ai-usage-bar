@@ -2,6 +2,7 @@ import Adw from 'gi://Adw';
 import Gtk from 'gi://Gtk';
 import Gio from 'gi://Gio';
 import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
+import {PROVIDERS} from './core/providerLoading.js';
 
 export default class AIUsageBarPreferences extends ExtensionPreferences {
   fillPreferencesWindow(window) {
@@ -29,8 +30,8 @@ export default class AIUsageBarPreferences extends ExtensionPreferences {
     page.add(display);
     const providers = new Adw.PreferencesGroup({title: 'Providers',
       description: 'OpenCode activity and OpenCode OpenAI subscription quota are separate.'});
-    for (const [id, title] of [['claude', 'Claude'], ['codex', 'Codex'], ['antigravity', 'Antigravity'],
-      ['opencode', 'OpenCode activity'], ['opencode-openai', 'OpenCode · OpenAI quota']]) {
+    for (const {id, label, prefsTitle} of PROVIDERS) {
+      const title = prefsTitle ?? label;
       const row = new Adw.SwitchRow({title, active: settings.get_strv('enabled-providers').includes(id)});
       row.connect('notify::active', () => {
         const current = settings.get_strv('enabled-providers').filter(value => value !== id);
