@@ -17,7 +17,7 @@ export function providerMeters(result, style, path, whiteIcons, display) {
   }));
   if (result.id === 'opencode') {
     if (display.activity) box.add_child(new St.Label({text: ['ok', 'stale'].includes(result.status)
-      ? `${compactTokens(result.totalTokens ?? 0)} / 7d` : '—',
+      ? `${compactTokens(result.totalTokens ?? 0)} / 7d` : '-',
     y_align: Clutter.ActorAlign.CENTER}));
     return box;
   }
@@ -25,7 +25,7 @@ export function providerMeters(result, style, path, whiteIcons, display) {
     const vertical = orientation === 'vertical';
     const value = meterValue(result, name);
     if (value === null) {
-      box.add_child(new St.Label({text: '—', accessible_name: `${name}: unavailable`,
+      box.add_child(new St.Label({text: '-', accessible_name: `${name}: unavailable`,
         y_align: Clutter.ActorAlign.CENTER}));
       continue;
     }

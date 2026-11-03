@@ -52,23 +52,24 @@ export function meterOrientation(orientation) {
 }
 
 export function compactTokens(value) {
-  if (!Number.isFinite(value) || value < 0) return '—';
+  if (!Number.isFinite(value) || value < 0) return '-';
   if (value < 1000) return String(value);
-  const unit = value >= 1000000 ? 'M' : 'K';
-  const divisor = unit === 'M' ? 1000000 : 1000;
-  return `${(value / divisor).toFixed(1).replace(/\.0$/, '')}${unit}`;
+  // Round before choosing the unit so 999,999 reads 1M, not 1000K.
+  const thousands = Math.round(value / 100) / 10;
+  if (thousands < 1000) return `${thousands}K`;
+  return `${Math.round(value / 100000) / 10}M`;
 }
 
 export function usageSummary(result, now = Date.now()) {
   if (result.id === 'opencode') {
-    if (!['ok', 'stale'].includes(result.status)) return 'OpenCode — activity unavailable';
+    if (!['ok', 'stale'].includes(result.status)) return 'OpenCode - activity unavailable';
     const count = result.activity?.length ?? 0;
-    return `OpenCode — ${Number(result.totalTokens ?? 0).toLocaleString()} tokens in 7 days across ${count} provider${count === 1 ? '' : 's'}` +
+    return `OpenCode - ${Number(result.totalTokens ?? 0).toLocaleString()} tokens in 7 days across ${count} provider${count === 1 ? '' : 's'}` +
       (result.status === 'stale' ? ' (stale)' : '');
   }
   const values = ['Session', 'Weekly'].map(name => {
     const value = meterValue(result, name, now);
     return `${name}: ${value === null ? 'unavailable' : `${value}% used`}`;
   });
-  return `${result.label} — ${values.join(', ')}${result.status === 'stale' ? ' (stale)' : ''}`;
+  return `${result.label} - ${values.join(', ')}${result.status === 'stale' ? ' (stale)' : ''}`;
 }

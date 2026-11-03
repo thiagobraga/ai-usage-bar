@@ -19,7 +19,7 @@ test('missing, invalid and failed usage never looks like zero', () => {
 
 test('unavailable quota renders a visible dash rather than a zero-length track', () => {
   const source = readFileSync(new URL('./meterWidgets.js', import.meta.url), 'utf8');
-  assert.match(source, /if \(value === null\) \{\s*box\.add_child\(new St\.Label\(\{text: '—'/);
+  assert.match(source, /if \(value === null\) \{\s*box\.add_child\(new St\.Label\(\{text: '-'/);
 });
 
 test('zero and full quotas remain distinct from unavailable and are bounded', () => {
@@ -45,21 +45,23 @@ test('horizontal is default, including previously saved auto; vertical remains e
 });
 
 test('accessible summaries distinguish windows and flag stale observations', () => {
-  assert.equal(usageSummary(result(20)), 'Claude — Session: 20% used, Weekly: 60% used');
+  assert.equal(usageSummary(result(20)), 'Claude - Session: 20% used, Weekly: 60% used');
   assert.match(usageSummary(result(20, 'stale')), /\(stale\)$/);
   assert.match(usageSummary(result(null)), /Session: unavailable/);
 });
 
 test('OpenCode activity summary reports tokens without claiming a quota', () => {
   const data = {id: 'opencode', label: 'OpenCode', status: 'ok', activity: [{provider: 'openai', tokens: 1200}], totalTokens: 1200};
-  assert.equal(usageSummary(data), 'OpenCode — 1,200 tokens in 7 days across 1 provider');
+  assert.equal(usageSummary(data), 'OpenCode - 1,200 tokens in 7 days across 1 provider');
 });
 
 test('OpenCode panel token totals fit a compact label', () => {
   assert.equal(compactTokens(0), '0');
   assert.equal(compactTokens(1200), '1.2K');
   assert.equal(compactTokens(26833105), '26.8M');
-  assert.equal(compactTokens(NaN), '—');
+  assert.equal(compactTokens(NaN), '-');
+  assert.equal(compactTokens(999999), '1M');
+  assert.equal(compactTokens(999949), '999.9K');
 });
 
 test('severity: low use is green, high use is red, unavailable is unknown', () => {
