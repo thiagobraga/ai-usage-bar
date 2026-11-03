@@ -1,5 +1,5 @@
 <p align="center">
-  <img src=".github/assets/ai-usage-bar.png" alt="AI Usage Bar" width="250" />
+  <img src=".github/assets/ai-usage-bar.png" width="250" alt="AI Usage Bar GNOME extension logo" />
 </p>
 
 <h1 align="center">AI Usage Bar</h1>
