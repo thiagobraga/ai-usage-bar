@@ -6,7 +6,7 @@
  * For now this provider is always in UNCONFIGURED state with guidance.
  */
 
-import {BaseProvider, AuthSource, ProviderStatus, makeResult, makeCapabilities} from '../provider.js';
+import { AuthSource, BaseProvider, ProviderStatus, makeCapabilities, makeResult } from '../core/provider.js';
 
 export default class CursorProvider extends BaseProvider {
   get id() { return 'cursor'; }

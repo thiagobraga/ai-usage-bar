@@ -1,7 +1,7 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import { selectOpenAIAuth } from './opencodeAuthData.js';
-import { UsageError, asyncCall, readJson } from './usageIO.js';
+import { UsageError, asyncCall, readJson } from '../usageIO.js';
 
 // `opencode debug paths db` costs a subprocess; the path does not change while the Shell runs.
 let cachedDbPath = null;

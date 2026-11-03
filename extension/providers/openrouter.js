@@ -8,11 +8,10 @@
  * This is the only provider that makes network calls in the MVP.
  */
 
-import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Soup from 'gi://Soup?version=3.0';
 
-import {BaseProvider, AuthSource, ProviderStatus, makeResult, makeCapabilities} from '../provider.js';
+import { AuthSource, BaseProvider, ProviderStatus, makeCapabilities, makeResult } from '../core/provider.js';
 
 const API_BASE = 'https://openrouter.ai';
 

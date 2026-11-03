@@ -11,7 +11,7 @@
 import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
 
-import {BaseProvider, AuthSource, ProviderStatus, makeResult, makeCapabilities} from '../provider.js';
+import { AuthSource, BaseProvider, ProviderStatus, makeCapabilities, makeResult } from '../core/provider.js';
 
 const HOME = GLib.get_home_dir();
 const GCLOUD_DIR = GLib.build_filenamev([HOME, '.config', 'gcloud']);

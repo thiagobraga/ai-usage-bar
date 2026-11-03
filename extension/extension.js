@@ -5,15 +5,15 @@ import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
-import { setDebug } from './debug.js';
-import { providerMeters } from './meterWidgets.js';
-import { buildPanelMenu } from './panelMenu.js';
-import { NavigationItem, PersistentSwitch, previewComponent } from './panelMenuWidgets.js';
-import { panelDescription, visibleComponents } from './panelComponents.js';
-import { makeResult } from './provider.js';
-import { ProviderRegistry } from './providerRegistry.js';
-import { PROVIDERS, ProviderLoading, visibleProviderIds } from './providerLoading.js';
-import { STALE_AFTER_MS } from './usageAge.js';
+import { setDebug } from './core/debug.js';
+import { providerMeters } from './ui/meterWidgets.js';
+import { buildPanelMenu } from './ui/panelMenu.js';
+import { NavigationItem, PersistentSwitch, previewComponent } from './ui/panelMenuWidgets.js';
+import { panelDescription, visibleComponents } from './ui/panelComponents.js';
+import { makeResult } from './core/provider.js';
+import { ProviderRegistry } from './core/providerRegistry.js';
+import { PROVIDERS, ProviderLoading, visibleProviderIds } from './core/providerLoading.js';
+import { STALE_AFTER_MS } from './core/usageAge.js';
 
 export default class AIUsageBarExtension extends Extension {
   enable() {

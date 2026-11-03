@@ -1,7 +1,7 @@
 import GLib from 'gi://GLib';
-import {BaseProvider, AuthSource, ProviderStatus, makeResult, makeCapabilities} from '../provider.js';
-import {credentialState, parseCodexUsage} from './usageData.js';
-import {UsageIO, UsageError, configDir, readJson, getUsage, tokenExpiry, latestCodexObservation} from './usageIO.js';
+import { AuthSource, BaseProvider, ProviderStatus, makeCapabilities, makeResult } from '../core/provider.js';
+import { credentialState, parseCodexUsage } from './usageData.js';
+import { UsageError, UsageIO, configDir, getUsage, latestCodexObservation, readJson, tokenExpiry } from './usageIO.js';
 
 const ENDPOINT = 'https://chatgpt.com/backend-api/wham/usage';
 export default class CodexProvider extends BaseProvider {
@@ -21,6 +21,7 @@ export default class CodexProvider extends BaseProvider {
       source: 'Codex OAuth usage API', dashboardUrl: 'https://chatgpt.com/codex/settings/usage',
       statusUrl: 'https://status.openai.com'};
     let failure;
+    let detail = '';
     try {
       return await this._io.run(async cancellable => {
         const tokens = (await readJson(`${this._directory}/auth.json`, cancellable))?.tokens;
@@ -35,7 +36,10 @@ export default class CodexProvider extends BaseProvider {
         return makeResult({...base, sessions, status: ProviderStatus.OK, lastUpdated: new Date(),
           plan: typeof data.plan_type === 'string' ? data.plan_type : ''});
       }, deadline - 1000000);
-    } catch (error) { failure = error instanceof UsageError ? error.code : 'unavailable'; }
+    } catch (error) {
+      failure = error instanceof UsageError ? error.code : 'unavailable';
+      detail = error?.detail ?? '';
+    }
     if (failure !== 'cancelled' && !this._io.destroyed) {
       try {
         const local = await this._io.run(
@@ -45,7 +49,7 @@ export default class CodexProvider extends BaseProvider {
       } catch { /* Preserve the live failure; never replace unavailable usage with zero. */ }
     }
     return makeResult({...base, status: failure === 'missing' ? ProviderStatus.UNCONFIGURED : ProviderStatus.ERROR,
-      errorKind: failure, error: `Codex usage: ${failure}. ${['expired', 'auth-error', 'missing'].includes(failure) ? 'Sign in again with the Codex CLI.' : 'Usage unavailable.'}`});
+      errorKind: failure, errorDetail: detail, error: `Codex usage: ${failure}. ${['expired', 'auth-error', 'missing'].includes(failure) ? 'Sign in again with the Codex CLI.' : 'Usage unavailable.'}`});
   }
   destroy() { this._io.destroy(); }
 }

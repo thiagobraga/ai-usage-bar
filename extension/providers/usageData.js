@@ -1,5 +1,6 @@
 // Pure quota parsers shared by GJS providers and Node tests.
-export const STALE_AFTER_MS = 5 * 60 * 1000;
+import {STALE_AFTER_MS} from '../core/usageAge.js';
+export {STALE_AFTER_MS};
 const percent = value => typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 100;
 const date = value => {
   if (!(typeof value === 'string' || typeof value === 'number' || value instanceof Date)) return null;
@@ -60,6 +61,32 @@ export function parseCodexJsonl(text, now = new Date()) {
     } catch { /* Truncated lines and unrelated CLI records are expected. */ }
   }
   return latest;
+}
+
+// Antigravity groups models (Gemini, Claude/GPT) and gives each group a 5h and
+// a weekly bucket. The panel shows the most-used bucket of each window; every
+// bucket is also kept as a detail row. Proto3 JSON omits a zero double, so a
+// bucket with a reset time but no remainingFraction is exhausted.
+const ANTIGRAVITY_WINDOWS = {'5h': ['Session', '5h'], weekly: ['Weekly', 'weekly']};
+export function parseAntigravityQuota(data) {
+  const details = [];
+  for (const group of Array.isArray(data?.groups) ? data.groups : []) {
+    const label = typeof group?.displayName === 'string' && group.displayName.trim()
+      ? group.displayName.trim().replace(/ models$/i, '') : 'Models';
+    const buckets = Array.isArray(group?.buckets) ? group.buckets : [];
+    for (const bucket of [...buckets].sort((a, b) => (a?.window === '5h' ? 0 : 1) - (b?.window === '5h' ? 0 : 1))) {
+      const [kind, suffix] = ANTIGRAVITY_WINDOWS[bucket?.window] ?? [];
+      const remaining = bucket?.remainingFraction ?? (date(bucket?.resetTime) ? 0 : null);
+      if (!kind || typeof remaining !== 'number' || !(remaining >= 0 && remaining <= 1)) continue;
+      const parsed = window(`${label} · ${suffix}`, Math.round((1 - remaining) * 1000) / 10, bucket.resetTime);
+      if (parsed) details.push({...parsed, kind, group: label});
+    }
+  }
+  const worst = kind => details.filter(s => s.kind === kind)
+    .reduce((top, s) => (!top || s.usedPercent > top.usedPercent ? s : top), null);
+  const summary = ['Session', 'Weekly'].map(kind => worst(kind)).filter(Boolean)
+    .map(({kind, group, ...s}) => ({...s, name: kind, resetLabel: `${group}: ${s.resetLabel}`}));
+  return [...summary, ...details.map(({kind, group, ...s}) => s)];
 }
 
 export function credentialState(token, expiresAt, now = Date.now()) {

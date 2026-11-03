@@ -1,8 +1,8 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
-import {BaseProvider, AuthSource, ProviderStatus, makeResult, makeCapabilities} from '../provider.js';
-import {UsageIO, UsageError, readJson} from './usageIO.js';
-import {parseOpenCodeStats} from './opencodeData.js';
+import { AuthSource, BaseProvider, ProviderStatus, makeCapabilities, makeResult } from '../../core/provider.js';
+import { parseOpenCodeStats } from './opencodeData.js';
+import { UsageError, UsageIO, readJson } from '../usageIO.js';
 
 const OPENCODE_TIMEOUT_MS = 20000;
 

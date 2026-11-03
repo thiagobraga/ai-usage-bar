@@ -47,11 +47,25 @@ export function unicodeSegments(percent, count = 5) {
   return '■'.repeat(filled) + '·'.repeat(count - filled);
 }
 
-export function meterOrientation(style, orientation) {
-  return orientation === 'auto' ? (style === 'colored' ? 'vertical' : 'horizontal') : orientation;
+export function meterOrientation(orientation) {
+  return orientation === 'vertical' ? 'vertical' : 'horizontal';
+}
+
+export function compactTokens(value) {
+  if (!Number.isFinite(value) || value < 0) return '—';
+  if (value < 1000) return String(value);
+  const unit = value >= 1000000 ? 'M' : 'K';
+  const divisor = unit === 'M' ? 1000000 : 1000;
+  return `${(value / divisor).toFixed(1).replace(/\.0$/, '')}${unit}`;
 }
 
 export function usageSummary(result, now = Date.now()) {
+  if (result.id === 'opencode') {
+    if (!['ok', 'stale'].includes(result.status)) return 'OpenCode — activity unavailable';
+    const count = result.activity?.length ?? 0;
+    return `OpenCode — ${Number(result.totalTokens ?? 0).toLocaleString()} tokens in 7 days across ${count} provider${count === 1 ? '' : 's'}` +
+      (result.status === 'stale' ? ' (stale)' : '');
+  }
   const values = ['Session', 'Weekly'].map(name => {
     const value = meterValue(result, name, now);
     return `${name}: ${value === null ? 'unavailable' : `${value}% used`}`;
