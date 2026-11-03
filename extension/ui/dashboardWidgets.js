@@ -55,7 +55,7 @@ function newProviderRow(parent, result, actions) {
   expand.x_align = Clutter.ActorAlign.FILL;
   const brand = result.id;
   title.add_child(new St.Icon({gicon: Gio.icon_new_for_string(actions.path + '/icons/' + brand + '.svg'),
-    icon_size: 16, y_align: center}));
+    icon_size: 20, y_align: center}));
   const name = label(result.label);
   name.x_expand = true;
   title.add_child(name);
@@ -109,19 +109,9 @@ function updateBody(row, result, enabled, notice, settings, actions, columns) {
     row.group.add_child(row.body);
     row.signature = signature;
     row.tiles = [];
-    const groups = new Map();
-    for (const choice of choices) {
-      const name = choice.kind === 'pair' ? 'Both windows' : 'Individual components';
-      if (!groups.has(name)) groups.set(name, []);
-      groups.get(name).push(choice);
-    }
-    row.body.add_child(label('Top bar components', 'ai-detail-heading'));
-    for (const [name, options] of groups) {
-      row.body.add_child(label(name, 'ai-group-label'));
-      const tiles = options.map(choice => makeTile(choice, result, settings, actions));
-      grid(row.body, tiles.map(tile => tile.cell), columns, 'ai-choice-line', true);
-      row.tiles.push(...tiles);
-    }
+    // One even grid: single windows first, then the paired views.
+    row.tiles = choices.map(choice => makeTile(choice, result, settings, actions));
+    grid(row.body, row.tiles.map(tile => tile.cell), columns, 'ai-choice-line', true);
     row.details = column('ai-reading-section');
     row.body.add_child(row.details);
   }
@@ -141,6 +131,7 @@ export function createDashboard(menu, settings, actions) {
   const scale = St.ThemeContext.get_for_stage(global.stage).scale_factor;
   const width = Math.max(200, Math.min(510, monitor.width / scale - 64));
   const columns = Math.max(2, Math.floor(width / 100));
+  const tileColumns = Math.min(4, columns);
   const host = new PopupMenu.PopupBaseMenuItem({activate: false, hover: false, can_focus: false});
   host.style_class = 'ai-dashboard-host';
   menu.addMenuItem(host);
@@ -154,13 +145,19 @@ export function createDashboard(menu, settings, actions) {
   content.add_child(overview);
   const providers = column('ai-provider-list');
   content.add_child(providers);
-  const footer = new St.BoxLayout({style_class: 'ai-dashboard-footer'});
+  const footer = column('ai-dashboard-footer');
   content.add_child(footer);
   for (const [name, glyph, action] of [['Refresh usage', 'view-refresh-symbolic', actions.refresh],
-    ['Settings', 'preferences-system-symbolic', actions.settings]]) {
+    ['Settings', 'preferences-system-symbolic', actions.settings],
+    ['About', 'help-about-symbolic', actions.about]]) {
     const control = button(name, 'ai-footer-button', action);
+    control.x_expand = true;
+    control.x_align = Clutter.ActorAlign.FILL;
     const caption = new St.BoxLayout({style_class: 'ai-footer-caption'});
-    caption.add_child(icon(glyph, 14));
+    // 20px slot matches the provider row icons so icons and text line up.
+    const slot = new St.Bin({style: 'width: 20px;', y_align: center});
+    slot.set_child(icon(glyph, 16));
+    caption.add_child(slot);
     caption.add_child(label(name));
     control.set_child(caption);
     footer.add_child(control);
@@ -200,7 +197,7 @@ export function createDashboard(menu, settings, actions) {
       row.expand.accessible_name = (expanded ? 'Collapse ' : 'Expand ') + result.label;
       if (expanded) {
         row.group.add_style_pseudo_class('active');
-        updateBody(row, result, enabled, notice, settings, actions, columns);
+        updateBody(row, result, enabled, notice, settings, actions, tileColumns);
       } else {
         row.group.remove_style_pseudo_class('active');
         row.body?.destroy();

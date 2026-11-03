@@ -41,7 +41,7 @@ export function providerSummary(result, now = Date.now()) {
   const status = result.status === 'stale' ? 'Stale reading' : '';
   if (result.id === 'opencode') {
     const value = readable && Number.isFinite(result.totalTokens) ? compactTokens(result.totalTokens) : '–';
-    return {rings: [], value, caption: '7-day tokens', status,
+    return {rings: [], value, secondary: 'tokens', status,
       heading: '7-day activity',
       rows: readable ? (result.activity ?? []).map(item => ({label: item.provider,
         value: compactTokens(item.tokens) + ' tokens', reset: '$' + item.cost.toFixed(2)})) : [],
@@ -49,6 +49,7 @@ export function providerSummary(result, now = Date.now()) {
       quota: readable ? openCodeQuota(result, now, readable) : undefined};
   }
   const rings = ['Session', 'Weekly'].map(name => meterValue(result, name, now));
-  return {rings, value: percentText(rings[0]), caption: 'Week ' + percentText(rings[1]), status,
+  // rings = [5h, weekly]; the card shows both percentages inside the rings.
+  return {rings, value: percentText(rings[0]), secondary: percentText(rings[1]), status,
     heading: 'Usage limits', rows: limitRows(result, now, readable)};
 }

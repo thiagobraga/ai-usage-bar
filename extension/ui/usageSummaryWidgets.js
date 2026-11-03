@@ -24,7 +24,7 @@ function fill(cr, value) {
 
 function ringGraphic(summary) {
   const graphic = new St.Widget({layout_manager: new Clutter.BinLayout(),
-    style: 'width: 60px; height: 60px;', x_align: CENTER});
+    style: 'width: 76px; height: 76px;', x_align: CENTER});
   if (summary.rings.length) {
     const area = new St.DrawingArea({x_expand: true, y_expand: true});
     area.connect('repaint', () => {
@@ -32,9 +32,11 @@ function ringGraphic(summary) {
       const size = Math.min(width, height);
       const cr = area.get_context();
       try {
+        // rings = [5h, weekly]: 5h is the thicker outer ring, weekly the thinner inner one.
         summary.rings.forEach((value, index) => {
-          const radius = size * (index === 0 ? 0.465 : 0.375);
-          cr.setLineWidth(size * (index === 0 ? 0.064 : 0.041));
+          const outer = index === 0;
+          const radius = size * (outer ? 0.465 : 0.375);
+          cr.setLineWidth(size * (outer ? 0.064 : 0.041));
           track(cr, area);
           cr.arc(width / 2, height / 2, radius, START, START + FULL_TURN);
           cr.stroke();
@@ -51,10 +53,8 @@ function ringGraphic(summary) {
     graphic.add_child(area);
   }
   const center = new St.BoxLayout({vertical: true, x_align: CENTER, y_align: CENTER});
-  center.add_child(label(summary.value, 'ai-summary-value', {
-    x_align: CENTER, style: 'font-size: 0.92em; font-weight: bold;'}));
-  center.add_child(label(summary.rings.length ? '5h' : 'tokens', 'ai-summary-unit', {
-    x_align: CENTER, style: 'font-size: 0.70em;'}));
+  center.add_child(label(summary.value, 'ai-summary-value', {x_align: CENTER}));
+  center.add_child(label(summary.secondary, 'ai-summary-unit', {x_align: CENTER}));
   graphic.add_child(center);
   return graphic;
 }
@@ -64,8 +64,6 @@ export function buildSummaryCard(result) {
   const card = new St.BoxLayout({vertical: true, style_class: 'ai-summary-card'});
   card.add_child(ringGraphic(summary));
   card.add_child(label(result.label, 'ai-summary-title', {x_align: CENTER}));
-  const caption = summary.caption + (summary.status ? ' · stale' : '');
-  card.add_child(label(caption, 'ai-summary-caption', {x_align: CENTER}));
   return card;
 }
 

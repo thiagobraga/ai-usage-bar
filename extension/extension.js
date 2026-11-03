@@ -8,6 +8,7 @@ import { setDebug } from './core/debug.js';
 import { providerMeters } from './ui/meterWidgets.js';
 import { buildPanelMenu } from './ui/panelMenu.js';
 import * as dashboardWidgets from './ui/dashboardWidgets.js';
+import { showAbout } from './ui/aboutDialog.js';
 import { panelDescription, visibleComponents } from './ui/panelComponents.js';
 import { makeResult } from './core/provider.js';
 import { ProviderRegistry } from './core/providerRegistry.js';
@@ -162,7 +163,7 @@ export default class AIUsageBarExtension extends Extension {
     const descriptions = [];
     for (const result of results) {
       const display = visibleComponents(result, visible, orientations, fallback);
-      if (!display.icon && !display.activity && !display.meters.length) continue;
+      if (!display.activity && !display.meters.length) continue;
       this._panelBox.add_child(providerMeters(result, this._settings.get_string('meter-style'),
         this.path, this._settings.get_boolean('white-icons'), display));
       descriptions.push(panelDescription(result, display));
@@ -198,6 +199,10 @@ export default class AIUsageBarExtension extends Extension {
         },
         refresh: () => this._doRefresh(),
         settings: () => this.openPreferences(),
+        about: () => {
+          this._indicator.menu.close();
+          showAbout(this.metadata);
+        },
       });
   }
 }

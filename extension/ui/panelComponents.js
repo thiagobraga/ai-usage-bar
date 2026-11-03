@@ -11,8 +11,6 @@ const ANTIGRAVITY = [
 
 // Stable IDs let a user configure a quota even before its first successful fetch.
 export function componentChoices(result) {
-  const icon = {id: `${result.id}:icon`, label: 'Icon', kind: 'icon', group: 'Provider'};
-
   const known = result.id === 'antigravity' ? ANTIGRAVITY : WINDOWS;
   const observed = (result.sessions ?? []).filter(session =>
     typeof session.name === 'string' && session.name.length <= 80 && session.name.length > 0);
@@ -28,14 +26,14 @@ export function componentChoices(result) {
   }));
   const activity = result.id === 'opencode'
     ? [{id: 'opencode:activity', label: '7-day tokens', kind: 'activity', group: 'Provider'}] : [];
-  return [icon, ...activity, ...singles, ...pairs];
+  return [...activity, ...singles, ...pairs];
 }
 
 export function visibleComponents(result, visible, orientations, defaultOrientation) {
   const selected = new Set(visible);
   const choices = componentChoices(result);
   return {
-    icon: selected.has(`${result.id}:icon`),
+    icon: true, // the provider icon is always shown, never a choice
     activity: result.id === 'opencode' && selected.has('opencode:activity'),
     meters: choices.filter(choice => ['meter', 'pair'].includes(choice.kind) && selected.has(choice.id))
       .map(choice => {

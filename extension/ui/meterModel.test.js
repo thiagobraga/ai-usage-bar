@@ -94,7 +94,7 @@ test('each quota window has its own persistent visibility and orientation', () =
   const data = {...result(20), id: 'claude'};
   const selected = visibleComponents(data, ['claude:Session'],
     ['claude:Session=vertical', 'claude:Weekly=vertical'], 'horizontal');
-  assert.equal(selected.icon, false);
+  assert.equal(selected.icon, true);
   assert.deepEqual(selected.meters, [{name: 'Session', orientation: 'vertical'}]);
   assert.equal(selected.activity, false);
   assert.equal(panelDescription(data, selected), 'Claude, Session: 20% used');
@@ -105,7 +105,7 @@ test('unconfigured and expired windows stay configurable without showing fabrica
   const data = {id: 'codex', label: 'Codex', status: 'error', sessions: []};
   const choices = componentChoices(data);
   assert.deepEqual(choices.filter(c => c.kind !== 'pair').map(c => c.id),
-    ['codex:icon', 'codex:Session', 'codex:Weekly']);
+    ['codex:Session', 'codex:Weekly']);
   const display = visibleComponents(data, ['codex:Weekly'], [], 'vertical');
   assert.deepEqual(display.meters, [{name: 'Weekly', orientation: 'vertical'}]);
   assert.equal(panelDescription(data, display), 'Codex, Weekly: unavailable');
@@ -119,7 +119,7 @@ test('Antigravity model groups are independent of the aggregate and one another'
   const choices = componentChoices(data);
   assert.ok(choices.some(c => c.id === 'antigravity:Gemini · 5h'));
   assert.ok(choices.some(c => c.id === 'antigravity:Gemini · weekly'));
-  const display = visibleComponents(data, ['antigravity:icon', 'antigravity:Gemini · 5h'],
+  const display = visibleComponents(data, ['antigravity:Gemini · 5h'],
     ['antigravity:Gemini · 5h=vertical'], 'horizontal');
   assert.deepEqual(display.meters, [{name: 'Gemini · 5h', orientation: 'vertical'}]);
   assert.equal(display.icon, true);
@@ -139,20 +139,20 @@ test('Antigravity discovers all reported model quotas and a new weekly group', (
   assert.equal(panelDescription(data, display), 'Antigravity, Model: gemini-4-argon: 0% used');
 });
 
-test('OpenCode activity can be hidden independently of its icon; unknown ids are ignored', () => {
+test('OpenCode activity can be hidden; the icon is never a choice; unknown ids are ignored', () => {
   const data = {id: 'opencode', label: 'OpenCode', status: 'ok', totalTokens: 1200, sessions: []};
-  assert.deepEqual(componentChoices(data).map(c => c.id).slice(0, 4),
-    ['opencode:icon', 'opencode:activity', 'opencode:Session', 'opencode:Weekly']);
+  assert.deepEqual(componentChoices(data).map(c => c.id).slice(0, 3),
+    ['opencode:activity', 'opencode:Session', 'opencode:Weekly']);
   assert.deepEqual(visibleComponents(data, ['opencode:activity', 'opencode:unknown'], [], 'horizontal'),
-    {icon: false, activity: true, meters: []});
-  assert.equal(panelDescription(data, {icon: false, activity: true, meters: []}), 'OpenCode, 1,200 tokens in 7 days');
+    {icon: true, activity: true, meters: []});
+  assert.equal(panelDescription(data, {icon: true, activity: true, meters: []}), 'OpenCode, 1,200 tokens in 7 days');
 });
 
 test('OpenCode shows its OpenAI quota windows next to token activity', () => {
   const data = {id: 'opencode', label: 'OpenCode', status: 'ok', totalTokens: 1200,
     sessions: [{name: 'Session', usedPercent: 22}, {name: 'Weekly', usedPercent: 38}]};
   const display = visibleComponents(data, ['opencode:activity', 'opencode:pair:percent'], [], 'horizontal');
-  assert.deepEqual(display, {icon: false, activity: true, meters: [{variant: 'percent'}]});
+  assert.deepEqual(display, {icon: true, activity: true, meters: [{variant: 'percent'}]});
   assert.equal(panelDescription(data, display),
     'OpenCode, Session: 22% used, Weekly: 38% used, 1,200 tokens in 7 days');
 });
