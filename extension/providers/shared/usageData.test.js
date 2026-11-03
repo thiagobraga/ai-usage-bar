@@ -91,6 +91,54 @@ test('Antigravity summary shows the most-used bucket per window and keeps every 
   assert.ok(result.every(s => !('kind' in s) && !('group' in s)));
 });
 
+test('Antigravity includes new weekly-only groups without inventing a 5h bucket', () => {
+  const sessions = parseAntigravityQuota({groups: [{displayName: 'Gemini 4 Argon', buckets: [
+    {bucketId: 'argon-weekly', window: 'weekly', remainingFraction: 0,
+      resetTime: '2026-11-10T06:00:00Z'},
+  ]}]});
+  assert.deepEqual(sessions.map(s => [s.name, s.usedPercent]),
+    [['Weekly', 100], ['Gemini 4 Argon · weekly', 100]]);
+});
+
+test('Antigravity model quotas use stable ids and do not guess their time window', () => {
+  const quota = {groups: [{displayName: 'Claude and GPT models', buckets: [
+    {window: 'weekly', remainingFraction: 0.1, resetTime: '2026-11-10T06:00:00Z'},
+  ]}]};
+  const models = {models: {
+    'gemini-2.5-pro': {displayName: 'Gemini Pro', apiProvider: 'API_PROVIDER_GOOGLE_GEMINI',
+      quotaInfo: {remainingFraction: 0.75, resetTime: '2026-11-03T11:00:00Z'}},
+    'gemini-3-flash': {displayName: 'Gemini Flash', apiProvider: 'API_PROVIDER_GOOGLE_GEMINI',
+      quotaInfo: {remainingFraction: 1, resetTime: '2026-11-03T11:00:00Z'}},
+    'gemini-4-argon': {quotaInfo: {remainingFraction: 0.2, resetTime: '2026-11-03T11:00:00Z'}},
+    'claude-sonnet': {displayName: 'Claude Sonnet', quotaInfo: {remainingFraction: 0.1,
+      resetTime: '2026-11-10T06:00:00Z'}},
+    tab_model: {quotaInfo: {remainingFraction: 0.2}},
+  }};
+  const sessions = parseAntigravityQuota(quota, models);
+  assert.deepEqual(sessions.map(s => [s.name, s.usedPercent]), [
+    ['Weekly', 90], ['Claude and GPT · weekly', 90], ['Model: claude-sonnet', 90],
+    ['Model: gemini-2.5-pro', 25], ['Model: gemini-3-flash', 0], ['Model: gemini-4-argon', 80],
+  ]);
+  assert.equal(sessions.find(s => s.name === 'Model: gemini-2.5-pro').label, 'Gemini Pro (gemini-2.5-pro)');
+  assert.equal(sessions.find(s => s.name === 'Model: gemini-4-argon').label, 'gemini-4-argon');
+  assert.ok(!sessions.some(s => s.name === 'Gemini · weekly'));
+});
+
+test('Antigravity does not replace a real Gemini group with model-level quota', () => {
+  const sessions = parseAntigravityQuota({groups: [{displayName: 'Gemini Models', buckets: [
+    {window: '5h', remainingFraction: 0.8},
+  ]}]}, {models: {'gemini-pro': {displayName: 'Gemini Pro', apiProvider: 'API_PROVIDER_GOOGLE_GEMINI',
+    quotaInfo: {remainingFraction: 0.1}}}});
+  assert.equal(sessions.find(s => s.name === 'Gemini · 5h').usedPercent, 20);
+  assert.equal(sessions.find(s => s.name === 'Session').usedPercent, 20);
+});
+
+test('Antigravity rejects invalid model quota instead of displaying zero', () => {
+  const models = {models: {'gemini-pro': {displayName: 'Gemini Pro',
+    quotaInfo: {remainingFraction: '1'}}, 'gemini-flash': {displayName: 'Gemini Flash', quotaInfo: {}}}};
+  assert.deepEqual(parseAntigravityQuota(null, models), []);
+});
+
 test('Antigravity omitted remainingFraction is exhausted only when the bucket has a reset time', () => {
   const groups = buckets => ({groups: [{displayName: 'Gemini Models', buckets}]});
   assert.equal(parseAntigravityQuota(groups([{window: '5h', resetTime: '2026-10-09T06:13:08Z'}]))[0].usedPercent, 100);

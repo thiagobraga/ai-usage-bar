@@ -42,14 +42,19 @@ export default class AntigravityProvider extends BaseProvider {
         const state = credentialState(token?.access_token, Date.parse(token?.expiry));
         if (state !== 'ready') throw new UsageError(state);
         const headers = {Authorization: `Bearer ${token.access_token}`, 'User-Agent': 'antigravity'};
-        const [data, account] = await Promise.all([
+        const [quota, models, account] = await Promise.allSettled([
           getUsage(`${API}:retrieveUserQuotaSummary`, headers, cancellable, {}),
+          getUsage(`${API}:fetchAvailableModels`, headers, cancellable, {}),
           getUsage(`${API}:loadCodeAssist`, headers, cancellable,
-            {metadata: {ideType: 'ANTIGRAVITY', pluginType: 'GEMINI'}}).catch(() => null),
+            {metadata: {ideType: 'ANTIGRAVITY', pluginType: 'GEMINI'}}),
         ]);
-        const sessions = parseAntigravityQuota(data);
-        if (!sessions.length) throw new UsageError('no-usage');
-        const plan = account?.paidTier?.name ?? account?.currentTier?.name;
+        const sessions = parseAntigravityQuota(
+          quota.status === 'fulfilled' ? quota.value : null,
+          models.status === 'fulfilled' ? models.value : null);
+        if (!sessions.length) throw quota.status === 'rejected' && models.status === 'rejected'
+          ? quota.reason : new UsageError('no-usage');
+        const plan = account.status === 'fulfilled'
+          ? account.value?.paidTier?.name ?? account.value?.currentTier?.name : null;
         return makeResult({...base, sessions, status: ProviderStatus.OK, lastUpdated: new Date(),
           plan: typeof plan === 'string' ? plan : ''});
       });
