@@ -81,7 +81,7 @@ test('JSONL ignores malformed/unrelated records and selects latest observation b
 });
 
 test('Antigravity summary shows the most-used bucket per window and keeps every bucket', () => {
-  const data = JSON.parse(readFileSync(new URL('./fixtures/antigravity-quota-summary.json', import.meta.url), 'utf8'));
+  const data = JSON.parse(readFileSync(new URL('../fixtures/antigravity-quota-summary.json', import.meta.url), 'utf8'));
   const result = parseAntigravityQuota(data);
   assert.deepEqual(result.map(s => [s.name, s.usedPercent]), [
     ['Session', 49.9], ['Weekly', 85.3], ['Gemini · 5h', 1.8], ['Gemini · weekly', 2],
@@ -124,7 +124,7 @@ test('GJS: fallback is always stale and retains budget after live timeout', t =>
   }
   const directory = mkdtempSync(join(tmpdir(), 'usage-fallback-test-'));
   const script = join(directory, 'check.mjs');
-  const codexUrl = new URL('./codex.js', import.meta.url).href;
+  const codexUrl = new URL('../codex/codex.js', import.meta.url).href;
   const ioUrl = new URL('./usageIO.js', import.meta.url).href;
   try {
     writeFileSync(script, `

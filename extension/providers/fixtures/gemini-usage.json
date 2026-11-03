@@ -1,0 +1,12 @@
+{
+  "usage": 30,
+  "limit": 100,
+  "reset": "Resets in 2h",
+  "daily_usage": 120,
+  "daily_limit": 1500,
+  "daily_reset": "Resets at midnight",
+  "plan": "Free",
+  "cost_today": "0.00",
+  "cost_30d": "0.00",
+  "tokens": "54000"
+}

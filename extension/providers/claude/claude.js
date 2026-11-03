@@ -1,8 +1,8 @@
 import GLib from 'gi://GLib';
-import { debugLog } from '../core/debug.js';
-import { AuthSource, BaseProvider, ProviderStatus, makeCapabilities, makeResult } from '../core/provider.js';
-import { credentialState, parseClaudeUsage } from './usageData.js';
-import { UsageError, UsageIO, configDir, getUsage, readJson } from './usageIO.js';
+import { debugLog } from '../../core/debug.js';
+import { AuthSource, BaseProvider, ProviderStatus, makeCapabilities, makeResult } from '../../core/provider.js';
+import { credentialState, parseClaudeUsage } from '../shared/usageData.js';
+import { UsageError, UsageIO, configDir, getUsage, readJson } from '../shared/usageIO.js';
 
 const ENDPOINT = 'https://api.anthropic.com/api/oauth/usage';
 export default class ClaudeProvider extends BaseProvider {

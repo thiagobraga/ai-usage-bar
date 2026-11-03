@@ -1,7 +1,7 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Soup from 'gi://Soup?version=3.0';
-import { debugLog, describeError } from '../core/debug.js';
+import { debugLog, describeError } from '../../core/debug.js';
 import { parseCodexJsonl } from './usageData.js';
 
 const PRIORITY = GLib.PRIORITY_DEFAULT;

@@ -26,8 +26,8 @@ Default meter style, orientation and icons are configured through **Settings →
 - `extension/extension.js`: panel lifecycle, component menu, refresh and stale display.
 - `extension/core/`: provider contract, registry (cache, timeout, backoff), lazy provider loading, usage age and debug logging.
 - `extension/ui/`: native Shell widgets (`meterWidgets.js`, `panelMenu*.js`) and pure display rules (`meterModel.js`, `panelComponents.js`).
-- `extension/providers/claude.js`, `codex.js`, `antigravity.js`, `opencode/`: authenticated usage and local activity readers.
-- `extension/providers/usageData.js`, `usageIO.js`: actual quota parsers and bounded/cancellable I/O.
+- `extension/providers/<name>/`: one folder per provider (`claude`, `codex`, `antigravity`, `opencode`): authenticated usage and local activity readers.
+- `extension/providers/shared/`: `usageData.js` quota parsers and `usageIO.js` bounded/cancellable I/O.
 - `extension/prefs.js`, `schemas/`: appearance, providers and refresh preferences.
 - `extension/**/*.test.js`: Node tests sit beside the modules they cover; `extension/providers/fixtures/` holds sample responses. Install and package scripts exclude both tests and fixtures.
 - `site/`: separate website, unchanged by the meter work.

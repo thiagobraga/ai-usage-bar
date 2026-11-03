@@ -1,7 +1,7 @@
 import { AuthSource, BaseProvider, ProviderStatus, makeCapabilities, makeResult } from '../../core/provider.js';
 import { readOpenCodeAuth } from './opencodeAuth.js';
-import { parseCodexUsage } from '../usageData.js';
-import { UsageError, UsageIO, getUsage } from '../usageIO.js';
+import { parseCodexUsage } from '../shared/usageData.js';
+import { UsageError, UsageIO, getUsage } from '../shared/usageIO.js';
 
 const ENDPOINT = 'https://chatgpt.com/backend-api/wham/usage';
 

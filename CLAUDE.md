@@ -58,7 +58,7 @@ prefs.js               — Adw settings UI (runs in separate process via gnome-e
 metadata.json, stylesheet.css, schemas/, icons/ — Required at the extension root. CSS is GNOME Shell CSS, not browser CSS. Compile schemas with glib-compile-schemas.
 core/                  — Logic with no St/Clutter. provider.js (BaseProvider, ProviderResult, enums), providerRegistry.js (cache, 5s per-provider timeout, backoff, error isolation), providerLoading.js (PROVIDERS list, lazy imports), usageAge.js, debug.js.
 ui/                    — Shell widgets and display rules. meterModel.js and panelComponents.js are pure (Node-testable); meterWidgets.js, panelMenu.js, panelMenuWidgets.js use St/Clutter.
-providers/             — One file per AI provider, each extends BaseProvider. providers/opencode/ groups the OpenCode readers; usageData.js (parsers) and usageIO.js (bounded I/O) are shared; fixtures/ holds sample responses.
+providers/             — One folder per AI provider (`providers/<name>/<name>.js` extends BaseProvider; OpenCode has extra auth and data modules). `shared/` has usageData.js (parsers) and usageIO.js (bounded I/O); `fixtures/` holds sample responses.
 ```
 
 Tests sit beside the modules they cover (`*.test.js`); `extension/metadata.test.js` covers packaging.
@@ -72,7 +72,7 @@ Tests sit beside the modules they cover (`*.test.js`); `extension/metadata.test.
 
 ### Adding a provider
 
-1. Create `extension/providers/<name>.js` extending `BaseProvider`.
+1. Create `extension/providers/<name>/<name>.js` extending `BaseProvider`.
 2. Override `id`, `label`, `icon`, `capabilities`, `authSource`, and `async fetch(settings)`.
 3. `fetch()` must never throw — return `makeResult({status: ProviderStatus.ERROR, error: ...})` on failure.
 4. Add it to `PROVIDERS` in `extension/core/providerLoading.js` and to the provider rows in `extension/prefs.js`.

@@ -1,5 +1,5 @@
 // Pure quota parsers shared by GJS providers and Node tests.
-import {STALE_AFTER_MS} from '../core/usageAge.js';
+import {STALE_AFTER_MS} from '../../core/usageAge.js';
 export {STALE_AFTER_MS};
 const percent = value => typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 100;
 const date = value => {

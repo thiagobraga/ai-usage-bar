@@ -1,7 +1,7 @@
 import Secret from 'gi://Secret';
-import { AuthSource, BaseProvider, ProviderStatus, makeCapabilities, makeResult } from '../core/provider.js';
-import { credentialState, parseAntigravityQuota } from './usageData.js';
-import { UsageError, UsageIO, asyncCall, getUsage } from './usageIO.js';
+import { AuthSource, BaseProvider, ProviderStatus, makeCapabilities, makeResult } from '../../core/provider.js';
+import { credentialState, parseAntigravityQuota } from '../shared/usageData.js';
+import { UsageError, UsageIO, asyncCall, getUsage } from '../shared/usageIO.js';
 
 // Google AI subscription quota as shown by Antigravity. The endpoint only
 // answers clients that identify as Antigravity.

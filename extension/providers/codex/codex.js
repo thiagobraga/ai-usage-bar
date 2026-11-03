@@ -1,7 +1,7 @@
 import GLib from 'gi://GLib';
-import { AuthSource, BaseProvider, ProviderStatus, makeCapabilities, makeResult } from '../core/provider.js';
-import { credentialState, parseCodexUsage } from './usageData.js';
-import { UsageError, UsageIO, configDir, getUsage, latestCodexObservation, readJson, tokenExpiry } from './usageIO.js';
+import { AuthSource, BaseProvider, ProviderStatus, makeCapabilities, makeResult } from '../../core/provider.js';
+import { credentialState, parseCodexUsage } from '../shared/usageData.js';
+import { UsageError, UsageIO, configDir, getUsage, latestCodexObservation, readJson, tokenExpiry } from '../shared/usageIO.js';
 
 const ENDPOINT = 'https://chatgpt.com/backend-api/wham/usage';
 export default class CodexProvider extends BaseProvider {
