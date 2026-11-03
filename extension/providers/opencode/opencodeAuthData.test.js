@@ -54,12 +54,15 @@ test('GJS reports active token-sharing as unsupported without requesting ChatGPT
       INSERT INTO credential VALUES ('openai', 0, '${JSON.stringify(oauth('old', 'other-account'))}', 1);`]).status, 0);
     writeFileSync(join(dir, 'bin', 'opencode'), `#!/bin/sh\nprintf '%s\\n' '${db}'\n`, {mode: 0o700});
     const script = join(dir, 'check.mjs');
-    writeFileSync(script, `import Provider from ${JSON.stringify(new URL('./opencodeOpenAI.js', import.meta.url).href)};
-      const provider = new Provider({request: () => { throw new Error('must not request'); }});
-      const result = await provider.fetch(null);
-      if (result.status !== 'unconfigured' || result.errorKind !== 'unsupported-auth' || result.sessions.length)
-        throw new Error('token-sharing did not remain unavailable');
-      provider.destroy();`);
+    writeFileSync(script, `import {fetchOpenAIQuota} from ${JSON.stringify(new URL('./opencodeQuota.js', import.meta.url).href)};
+      import {readOpenCodeAuth} from ${JSON.stringify(new URL('./opencodeAuth.js', import.meta.url).href)};
+      import Gio from 'gi://Gio';
+      let code = null;
+      try {
+        await fetchOpenAIQuota({readAuth: readOpenCodeAuth, request: () => { throw new Error('must not request'); }},
+          new Gio.Cancellable());
+      } catch (error) { code = error.code; }
+      if (code !== 'unsupported-auth') throw new Error('token-sharing did not remain unavailable: ' + code);`);
     const check = spawnSync('gjs', ['-m', script], {env: {...process.env,
       PATH: `${join(dir, 'bin')}:${process.env.PATH}`, XDG_DATA_HOME: dir}, encoding: 'utf8', timeout: 10000});
     assert.equal(check.status, 0, check.stderr || check.error?.message);
@@ -103,17 +106,16 @@ test('GJS OpenCode quota fetch uses its own OAuth account and never Codex creden
   const dir = mkdtempSync('/tmp/opencode/opencode-quota-test-');
   try {
     const script = join(dir, 'check.mjs');
-    writeFileSync(script, `import Provider from ${JSON.stringify(new URL('./opencodeOpenAI.js', import.meta.url).href)};
+    writeFileSync(script, `import {fetchOpenAIQuota} from ${JSON.stringify(new URL('./opencodeQuota.js', import.meta.url).href)};
+      import Gio from 'gi://Gio';
       const calls = [];
-      const provider = new Provider({readAuth: async () => ({access: 'opencode-token', accountID: 'opencode-account'}),
-        request: async (url, headers) => { calls.push({url, headers}); return {rate_limit: {
+      const quota = await fetchOpenAIQuota({readAuth: async () => ({access: 'opencode-token', accountID: 'opencode-account'}),
+        request: async (url, headers) => { calls.push({url, headers}); return {plan_type: 'plus', rate_limit: {
           primary_window: {used_percent: 22, limit_window_seconds: 18000},
-          secondary_window: {used_percent: 38, limit_window_seconds: 604800}}}; }});
-      const result = await provider.fetch(null);
-      if (result.id !== 'opencode-openai' || result.status !== 'ok' || result.sessions[0].usedPercent !== 22 ||
+          secondary_window: {used_percent: 38, limit_window_seconds: 604800}}}; }}, new Gio.Cancellable());
+      if (quota.plan !== 'plus' || quota.sessions[0].usedPercent !== 22 ||
           calls.length !== 1 || calls[0].headers.Authorization !== 'Bearer opencode-token' ||
-          calls[0].headers['ChatGPT-Account-Id'] !== 'opencode-account') throw new Error('wrong account');
-      provider.destroy();`);
+          calls[0].headers['ChatGPT-Account-Id'] !== 'opencode-account') throw new Error('wrong account');`);
     const check = spawnSync('gjs', ['-m', script], {encoding: 'utf8', timeout: 10000});
     assert.equal(check.status, 0, check.stderr || check.error?.message);
   } finally { rmSync(dir, {recursive: true, force: true}); }

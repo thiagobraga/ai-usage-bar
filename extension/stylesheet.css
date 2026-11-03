@@ -1,4 +1,4 @@
-.ai-panel-box { spacing: 14px; padding: 0 4px; }
+.ai-panel-box { spacing: 16px; padding: 0 4px; }
 .ai-provider-meters { spacing: 6px; }
 .ai-brand-claude { color: #e87943; }
 .ai-brand-codex { color: #f6f5f1; }
@@ -18,3 +18,47 @@
 .ai-unknown { color: #a7a9b1; font-size: 10px; }
 .ai-source { font-size: 0.85em; color: #a7a9b1; }
 .ai-component-preview { min-width: 46px; padding: 3px 8px; margin: 0 8px; background-color: #303037; border-radius: 6px; }
+
+.ai-dashboard-host { padding: 4px 8px; }
+.ai-dashboard { spacing: 10px; padding: 2px 4px; }
+.ai-overview, .ai-provider-list { spacing: 5px; }
+.ai-card-line, .ai-choice-line { spacing: 4px; }
+.ai-card-button, .ai-choice {
+  border-radius: 9px;
+  border: 1px solid rgba(145,145,145,0.25);
+  background-color: rgba(145,145,145,0.10);
+}
+.ai-summary-card { padding: 7px 3px; spacing: 2px; }
+.ai-summary-title, .ai-detail-heading { font-weight: bold; font-size: 0.92em; }
+.ai-summary-caption, .ai-group-label { font-size: 0.8em; }
+.ai-group-label { margin-top: 3px; }
+.ai-summary-caption { color: #969699; }
+.ai-provider-section { border-radius: 10px; background-color: rgba(145,145,145,0.09); }
+.ai-provider-section:active { background-color: rgba(145,145,145,0.15); }
+.ai-provider-header { padding: 2px 4px; spacing: 4px; }
+.ai-expand { padding: 7px; border-radius: 7px; }
+.ai-provider-title { spacing: 8px; }
+.ai-provider-title StLabel { font-weight: bold; }
+.ai-provider-toggle { border-radius: 8px; padding: 5px; }
+.ai-provider-body { padding: 6px 10px 12px; spacing: 5px; }
+.ai-choice-cell { spacing: 1px; }
+.ai-choice { padding: 4px 3px; }
+.ai-choice:checked {
+  background-color: rgba(50,168,141,0.21);
+  border-color: rgba(69,180,155,0.79);
+}
+.ai-choice-sample { min-height: 24px; }
+.ai-choice-content { spacing: 2px; }
+.ai-choice-label, .ai-orientation { font-size: 0.80em; }
+.ai-orientation { padding: 3px; border-radius: 4px; }
+.ai-reading-section { margin-top: 5px; padding-top: 9px; border-top: 1px solid rgba(145,145,145,0.3); }
+.ai-usage-details { spacing: 8px; }
+.ai-detail-row { spacing: 4px; }
+.ai-dashboard-footer { spacing: 7px; }
+.ai-footer-button { padding: 5px 8px; border-radius: 8px; }
+.ai-footer-caption { spacing: 5px; }
+.ai-card-button:hover, .ai-choice:hover, .ai-expand:hover, .ai-orientation:hover,
+.ai-footer-button:hover, .ai-provider-toggle:hover { background-color: rgba(145,145,145,0.25); }
+.ai-card-button:focus, .ai-choice:focus, .ai-expand:focus, .ai-orientation:focus,
+.ai-footer-button:focus, .ai-provider-toggle:focus { box-shadow: inset 0 0 0 2px #57bba5; }
+.ai-empty { padding: 9px; }

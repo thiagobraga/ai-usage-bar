@@ -104,7 +104,8 @@ test('each quota window has its own persistent visibility and orientation', () =
 test('unconfigured and expired windows stay configurable without showing fabricated use', () => {
   const data = {id: 'codex', label: 'Codex', status: 'error', sessions: []};
   const choices = componentChoices(data);
-  assert.deepEqual(choices.map(c => c.id), ['codex:icon', 'codex:Session', 'codex:Weekly']);
+  assert.deepEqual(choices.filter(c => c.kind !== 'pair').map(c => c.id),
+    ['codex:icon', 'codex:Session', 'codex:Weekly']);
   const display = visibleComponents(data, ['codex:Weekly'], [], 'vertical');
   assert.deepEqual(display.meters, [{name: 'Weekly', orientation: 'vertical'}]);
   assert.equal(panelDescription(data, display), 'Codex, Weekly: unavailable');
@@ -125,16 +126,50 @@ test('Antigravity model groups are independent of the aggregate and one another'
   assert.equal(panelDescription(data, display), 'Antigravity, Gemini · 5h: 12% used');
 });
 
+test('Antigravity discovers all reported model quotas and a new weekly group', () => {
+  const data = {id: 'antigravity', label: 'Antigravity', status: 'ok', sessions: [
+    {name: 'Gemini 4 Argon · weekly', usedPercent: 0},
+    {name: 'Model: gemini-4-argon', label: 'Gemini 4 Argon (gemini-4-argon)', usedPercent: 0},
+  ]};
+  const choices = componentChoices(data);
+  assert.ok(choices.some(c => c.id === 'antigravity:Gemini 4 Argon · weekly'));
+  assert.ok(choices.some(c => c.id === 'antigravity:Model: gemini-4-argon' &&
+    c.label === 'Gemini 4 Argon (gemini-4-argon)'));
+  const display = visibleComponents(data, ['antigravity:Model: gemini-4-argon'], [], 'vertical');
+  assert.equal(panelDescription(data, display), 'Antigravity, Model: gemini-4-argon: 0% used');
+});
+
 test('OpenCode activity can be hidden independently of its icon; unknown ids are ignored', () => {
   const data = {id: 'opencode', label: 'OpenCode', status: 'ok', totalTokens: 1200, sessions: []};
-  assert.deepEqual(componentChoices(data).map(c => c.id), ['opencode:icon', 'opencode:activity']);
+  assert.deepEqual(componentChoices(data).map(c => c.id).slice(0, 4),
+    ['opencode:icon', 'opencode:activity', 'opencode:Session', 'opencode:Weekly']);
   assert.deepEqual(visibleComponents(data, ['opencode:activity', 'opencode:unknown'], [], 'horizontal'),
     {icon: false, activity: true, meters: []});
   assert.equal(panelDescription(data, {icon: false, activity: true, meters: []}), 'OpenCode, 1,200 tokens in 7 days');
+});
+
+test('OpenCode shows its OpenAI quota windows next to token activity', () => {
+  const data = {id: 'opencode', label: 'OpenCode', status: 'ok', totalTokens: 1200,
+    sessions: [{name: 'Session', usedPercent: 22}, {name: 'Weekly', usedPercent: 38}]};
+  const display = visibleComponents(data, ['opencode:activity', 'opencode:pair:percent'], [], 'horizontal');
+  assert.deepEqual(display, {icon: false, activity: true, meters: [{variant: 'percent'}]});
+  assert.equal(panelDescription(data, display),
+    'OpenCode, Session: 22% used, Weekly: 38% used, 1,200 tokens in 7 days');
 });
 
 test('orientationFor lets a per-meter override beat the default', () => {
   assert.equal(orientationFor('claude:Session', ['claude:Session=vertical'], 'horizontal'), 'vertical');
   assert.equal(orientationFor('claude:Session', ['claude:Session=horizontal'], 'vertical'), 'horizontal');
   assert.equal(orientationFor('claude:Weekly', ['claude:Session=vertical'], 'horizontal'), 'horizontal');
+});
+
+test('paired panel components coexist with each other and legacy quota bars', () => {
+  const data = {...result(0), id: 'codex'};
+  const pairs = componentChoices(data).filter(choice => choice.kind === 'pair');
+  assert.deepEqual(pairs.map(choice => choice.variant), ['horizontal', 'vertical', 'percent', 'reset', 'rings']);
+  const display = visibleComponents(data, ['codex:Session', ...pairs.map(choice => choice.id)], [], 'vertical');
+  assert.deepEqual(display.meters[0], {name: 'Session', orientation: 'vertical'});
+  assert.deepEqual(display.meters.slice(1), pairs.map(choice => ({variant: choice.variant})));
+  assert.match(panelDescription(data, display), /Session: 0% used, Weekly: 60% used/);
+  assert.doesNotMatch(panelDescription(data, display), /undefined/);
 });

@@ -23,6 +23,12 @@ test('required extension files exist', () => {
   ]) assert.ok(exists(path), `${path} should exist`);
 });
 
+test('panel agent groups have 16px spacing without changing meter spacing', () => {
+  const stylesheet = read('extension/stylesheet.css');
+  assert.match(stylesheet, /\.ai-panel-box\s*\{[^}]*spacing:\s*16px;/);
+  assert.match(stylesheet, /\.ai-provider-meters\s*\{[^}]*spacing:\s*6px;/);
+});
+
 test('schema contains appearance and refresh settings', () => {
   const schema = read('extension/schemas/org.gnome.shell.extensions.ai-usage-bar.gschema.xml');
   for (const key of ['refresh-interval-seconds', 'enabled-providers'])
@@ -35,20 +41,9 @@ test('schema contains appearance and refresh settings', () => {
   assert.match(schema, /<key name="panel-orientations" type="as">/);
 });
 
-test('popup replaces the raw metric dump with panel component controls', () => {
-  const extension = read('extension/extension.js');
-  const panelMenu = read('extension/ui/panelMenu.js');
-  const widgets = read('extension/ui/panelMenuWidgets.js');
-  assert.match(extension, /buildPanelMenu\(/);
-  assert.doesNotMatch(extension, /from ['"]\.\/providers\//);
-  assert.match(panelMenu, /NavigationItem\('Components'/);
-  assert.match(panelMenu, /PopupMenuSection/);
-  assert.match(widgets, /PopupSwitchMenuItem/);
-  assert.doesNotMatch(extension, /menu\.addMenuItem\(new PopupMenu\.PopupMenuItem\(usageSummary\(result\)/);
-  assert.doesNotMatch(extension, /Open Claude Desktop|Open Codex on web|Open Antigravity on web/);
-  assert.match(panelMenu, /more\.menu\.addAction\('Refresh usage'/);
-  assert.match(panelMenu, /more\.menu\.addAction\('Settings…'/);
-  assert.equal((panelMenu.match(/new PopupMenu\.PopupSubMenuMenuItem\(/g) ?? []).length, 1);
+test('native dashboard modules ship with the extension', () => {
+  for (const module of ['panelMenu', 'dashboardWidgets', 'usageSummaryWidgets'])
+    assert.ok(exists(`extension/ui/${module}.js`));
 });
 
 test('white icon variants keep the Claude and Antigravity outlines', () => {
@@ -70,9 +65,9 @@ test('OpenCode meters use the official compact logo instead of text or the Codex
   assert.match(logo, /#4B4646/);
 
   const widgets = read('extension/ui/meterWidgets.js');
-  assert.match(widgets, /result\.id === 'opencode-openai' \? 'opencode' : result\.id/);
+  assert.doesNotMatch(widgets, /opencode-openai/);
   assert.doesNotMatch(widgets, /text: 'OC'/);
-  assert.match(widgets, /iconName}\.svg`\),[\s\S]*?if \(result\.id === 'opencode'\)/);
+  assert.match(widgets, /iconName}\.svg`\),[\s\S]*?if \(result\.id === 'opencode' && display\.activity\)/);
 });
 
 test('install script uses UUID and compiles schemas', () => {

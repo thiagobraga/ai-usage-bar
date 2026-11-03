@@ -1,12 +1,30 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {ProviderLoading, visibleProviderIds} from './providerLoading.js';
+import {PROVIDERS, ProviderLoading, visibleProviderIds} from './providerLoading.js';
 import {ProviderRegistry} from './providerRegistry.js';
+
+test('OpenCode is one provider; its OpenAI quota is not a separate entry', () => {
+  assert.deepEqual(PROVIDERS.map(provider => provider.id), ['claude', 'codex', 'antigravity', 'opencode']);
+});
 
 test('background selection requires both an enabled provider and a visible component', () => {
   const settings = {get_strv: key => key === 'enabled-providers'
     ? ['claude', 'codex', 'antigravity'] : ['claude:Session', 'codex-other:icon', 'opencode:icon']};
   assert.deepEqual(visibleProviderIds(settings), ['claude']);
+});
+
+test('provider ids removed from the extension are ignored in saved settings', () => {
+  const settings = {get_strv: key => key === 'enabled-providers'
+    ? ['claude', 'opencode-openai', 'opencode'] : ['claude:icon', 'opencode-openai:Session', 'opencode:activity']};
+  assert.deepEqual(visibleProviderIds(settings), ['claude', 'opencode']);
+  assert.deepEqual(visibleProviderIds(settings, true), ['claude', 'opencode']);
+});
+
+test('opening the dashboard includes enabled providers with no panel components', () => {
+  const settings = {get_strv: key => key === 'enabled-providers'
+    ? ['claude', 'codex'] : ['claude:icon', 'opencode:activity']};
+  assert.deepEqual(visibleProviderIds(settings, true), ['claude', 'codex']);
+  assert.deepEqual(visibleProviderIds(settings, false), ['claude']);
 });
 
 test('loads a provider once and releases menu-only instances on close', async () => {

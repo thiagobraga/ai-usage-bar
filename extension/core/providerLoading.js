@@ -2,13 +2,15 @@ export const PROVIDERS = [
   {id: 'claude', label: 'Claude', load: () => import('../providers/claude/claude.js')},
   {id: 'codex', label: 'Codex', load: () => import('../providers/codex/codex.js')},
   {id: 'antigravity', label: 'Antigravity', load: () => import('../providers/antigravity/antigravity.js')},
-  {id: 'opencode', label: 'OpenCode', prefsTitle: 'OpenCode activity', load: () => import('../providers/opencode/opencode.js')},
-  {id: 'opencode-openai', label: 'OpenCode · OpenAI', prefsTitle: 'OpenCode · OpenAI quota', load: () => import('../providers/opencode/opencodeOpenAI.js')},
+  {id: 'opencode', label: 'OpenCode', load: () => import('../providers/opencode/opencode.js')},
 ];
 
-export function visibleProviderIds(settings) {
+export function visibleProviderIds(settings, dashboardOpen = false) {
+  // Saved settings may name providers this version no longer ships (e.g. opencode-openai).
+  const enabled = settings.get_strv('enabled-providers').filter(id => PROVIDERS.some(provider => provider.id === id));
+  if (dashboardOpen) return enabled;
   const selected = settings.get_strv('panel-components');
-  return settings.get_strv('enabled-providers').filter(id =>
+  return enabled.filter(id =>
     selected.some(component => component.startsWith(`${id}:`)));
 }
 

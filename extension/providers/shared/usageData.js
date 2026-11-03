@@ -63,12 +63,12 @@ export function parseCodexJsonl(text, now = new Date()) {
   return latest;
 }
 
-// Antigravity groups models (Gemini, Claude/GPT) and gives each group a 5h and
-// a weekly bucket. The panel shows the most-used bucket of each window; every
-// bucket is also kept as a detail row. Proto3 JSON omits a zero double, so a
-// bucket with a reset time but no remainingFraction is exhausted.
+// Group buckets have explicit windows. Individual models report a quota and
+// reset, but not its window, so their readings are kept separate from the
+// 5h/weekly aggregates. Proto3 omits a zero remainingFraction when a reset
+// time is present.
 const ANTIGRAVITY_WINDOWS = {'5h': ['Session', '5h'], weekly: ['Weekly', 'weekly']};
-export function parseAntigravityQuota(data) {
+export function parseAntigravityQuota(data, availableModels = null) {
   const details = [];
   for (const group of Array.isArray(data?.groups) ? data.groups : []) {
     const label = typeof group?.displayName === 'string' && group.displayName.trim()
@@ -86,7 +86,20 @@ export function parseAntigravityQuota(data) {
     .reduce((top, s) => (!top || s.usedPercent > top.usedPercent ? s : top), null);
   const summary = ['Session', 'Weekly'].map(kind => worst(kind)).filter(Boolean)
     .map(({kind, group, ...s}) => ({...s, name: kind, resetLabel: `${group}: ${s.resetLabel}`}));
-  return [...summary, ...details.map(({kind, group, ...s}) => s)];
+  const models = availableModels?.models;
+  const modelSessions = [];
+  if (models && typeof models === 'object' && !Array.isArray(models)) {
+    for (const [id, model] of Object.entries(models).sort(([a], [b]) => a.localeCompare(b))) {
+      if (!/^(gemini|claude|gpt)-[a-z0-9._-]{1,53}$/.test(id) || model?.isInternal) continue;
+      const quota = model.quotaInfo;
+      const remaining = quota?.remainingFraction ?? (date(quota?.resetTime) ? 0 : null);
+      if (typeof remaining !== 'number' || !Number.isFinite(remaining) || remaining < 0 || remaining > 1) continue;
+      const parsed = window(`Model: ${id}`, Math.round((1 - remaining) * 1000) / 10, quota.resetTime);
+      const displayName = typeof model.displayName === 'string' ? model.displayName.trim().slice(0, 40) : '';
+      if (parsed) modelSessions.push({...parsed, label: displayName ? `${displayName} (${id})` : id});
+    }
+  }
+  return [...summary, ...details.map(({kind, group, ...s}) => s), ...modelSessions];
 }
 
 export function credentialState(token, expiresAt, now = Date.now()) {
