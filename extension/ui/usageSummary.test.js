@@ -13,6 +13,7 @@ test('summary maps session and weekly by name, keeping true zero', () => {
   const summary = providerSummary(result, now);
   assert.deepEqual(summary.rings, [0, 81]);
   assert.equal(summary.value, '0%');
+  assert.equal(summary.secondary, '81%');
   assert.deepEqual(summary.rows.map(row => row.reset), ['Resets in 1h 30m', 'Resets in 1d 5h']);
 });
 
