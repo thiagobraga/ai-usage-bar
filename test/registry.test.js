@@ -68,3 +68,32 @@ test('rate limit pauses background refresh; manual refresh bypasses', async () =
   assert.equal(calls, 2);
   registry.destroy();
 });
+
+test('error warning includes the provider error detail', async () => {
+  const warnings = [];
+  const original = console.warn;
+  console.warn = message => warnings.push(message);
+  try {
+    const registry = new ProviderRegistry();
+    registry.register({id: 'claude', isConfigured: true, fetch: async () => ({id: 'claude', status: 'error',
+      errorKind: 'unavailable', error: 'Claude usage: unavailable.', errorDetail: 'HTTP 500 Server Error'})});
+    await registry.refreshAll({get_strv: () => ['claude']});
+    registry.destroy();
+  } finally { console.warn = original; }
+  assert.match(warnings[0], /\(HTTP 500 Server Error\)/);
+});
+
+test('provider timeoutMs overrides the default registry timeout', async () => {
+  const registry = new ProviderRegistry();
+  registry.register({id: 'claude', isConfigured: true, timeoutMs: 6500,
+    fetch: () => new Promise(resolve => setTimeout(() => resolve({...good}), 5300))});
+  await registry.refreshAll(claudeOnly);
+  assert.equal(registry.getCached('claude').status, 'ok');
+  registry.destroy();
+});
+
+test('usageIO maps GJS enum errors for unknown HTTP codes to the status', () => {
+  const parse = message => Number(/^(\d+) is not a valid value/.exec(message)?.[1]);
+  assert.equal(parse('429 is not a valid value for enumeration Status'), 429);
+  assert.ok(Number.isNaN(parse('other failure')));
+});

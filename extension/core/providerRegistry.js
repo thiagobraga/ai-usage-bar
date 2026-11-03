@@ -7,6 +7,7 @@
  */
 
 import {ProviderStatus, makeResult} from './provider.js';
+import {debugLog} from './debug.js';
 
 const PROVIDER_TIMEOUT_MS = 5000;
 const RATE_LIMIT_BACKOFF_MS = 120000;
@@ -30,6 +31,13 @@ export class ProviderRegistry {
    */
   register(provider) {
     this._providers.set(provider.id, provider);
+  }
+
+  unregister(id) {
+    this._providers.get(id)?.destroy?.();
+    this._providers.delete(id);
+    this._cache.delete(id);
+    this._backoffUntil.delete(id);
   }
 
   /**
@@ -89,33 +97,21 @@ export class ProviderRegistry {
    * @param {object} settings — GSettings proxy
    * @returns {Promise<Map<string, import('./provider.js').ProviderResult>>}
    */
-  async refreshAll(settings) {
-    const enabled = this.getEnabled(settings);
-    const results = await Promise.allSettled(
-      enabled.map(provider => this._backedOff(provider)
-        ? Promise.resolve(null)
-        : this._fetchWithTimeout(provider, settings)),
-    );
+  async refreshAll(settings, ids = null, onResult = null) {
+    const enabled = this.getEnabled(settings).filter(provider => !ids || ids.includes(provider.id));
+    // Store each result as soon as its provider finishes so a slow provider
+    // never delays the others; onResult lets the caller update the UI per provider.
+    await Promise.all(enabled.map(async provider => {
+      if (this._backedOff(provider)) return;
+      let result;
+      try { result = await this._fetchWithTimeout(provider, settings); }
+      catch (err) { result = this._failure(provider, err); }
+      if (this._destroyed || this._providers.get(provider.id) !== provider) return;
+      this._store(provider, result);
+      try { onResult?.(provider.id); }
+      catch (err) { console.warn(`[ai-usage-bar] ${provider.id}: onResult failed: ${err?.message ?? err}`); }
+    }));
     if (this._destroyed) return new Map();
-
-    for (let i = 0; i < enabled.length; i++) {
-      const provider = enabled[i];
-      const outcome = results[i];
-
-      if (outcome.status === 'fulfilled') {
-        if (outcome.value) this._store(provider, outcome.value);
-      } else {
-        this._store(provider, makeResult({
-          id: provider.id,
-          label: provider.label,
-          icon: provider.icon,
-          status: ProviderStatus.ERROR,
-          errorKind: 'timeout',
-          error: outcome.reason?.message ?? 'Unknown error',
-          lastUpdated: new Date(),
-        }));
-      }
-    }
 
     return new Map(this._cache);
   }
@@ -131,9 +127,15 @@ export class ProviderRegistry {
    * @private
    */
   _store(provider, result) {
+    if (this._destroyed || this._providers.get(provider.id) !== provider) return;
+    // Keyed on errorKind, not status: Codex reports a 429 as STALE via its local fallback.
+    if (result.errorKind === 'rate-limited') {
+      this._backoffUntil.set(provider.id, Date.now() + RATE_LIMIT_BACKOFF_MS);
+    } else if (result.status !== ProviderStatus.ERROR && !result.errorKind) {
+      this._backoffUntil.delete(provider.id);
+    }
     if (result.status === ProviderStatus.ERROR) {
-      console.warn(`[ai-usage-bar] ${provider.id}: ${result.errorKind ?? 'error'}: ${result.error ?? ''}`);
-      if (result.errorKind === 'rate-limited') this._backoffUntil.set(provider.id, Date.now() + RATE_LIMIT_BACKOFF_MS);
+      console.warn(`[ai-usage-bar] ${provider.id}: ${result.errorKind ?? 'error'}: ${result.error ?? ''}${result.errorDetail ? ` (${result.errorDetail})` : ''}`);
       const previous = this._cache.get(provider.id);
       if (TRANSIENT_ERRORS.has(result.errorKind) && previous?.sessions?.length &&
           [ProviderStatus.OK, ProviderStatus.STALE].includes(previous.status)) {
@@ -141,10 +143,26 @@ export class ProviderRegistry {
           errorKind: result.errorKind, error: result.error});
         return;
       }
-    } else {
-      this._backoffUntil.delete(provider.id);
     }
     this._cache.set(provider.id, result);
+  }
+
+  /**
+   * Build an error result for a rejected fetch.  Only the registry's own
+   * timeout is labeled 'timeout'; anything else is a real failure ('error',
+   * not transient) so the cause stays visible instead of looking like a stall.
+   * @private
+   */
+  _failure(provider, err) {
+    return makeResult({
+      id: provider.id,
+      label: provider.label,
+      icon: provider.icon,
+      status: ProviderStatus.ERROR,
+      errorKind: err?.errorKind ?? 'error',
+      error: err?.message ?? 'Unknown error',
+      lastUpdated: new Date(),
+    });
   }
 
   /**
@@ -162,17 +180,9 @@ export class ProviderRegistry {
       this._backoffUntil.delete(id);
       this._store(provider, await this._fetchWithTimeout(provider, settings));
     } catch (err) {
-      this._store(provider, makeResult({
-        id: provider.id,
-        label: provider.label,
-        icon: provider.icon,
-        status: ProviderStatus.ERROR,
-        errorKind: 'timeout',
-        error: err?.message ?? 'Unknown error',
-        lastUpdated: new Date(),
-      }));
+      this._store(provider, this._failure(provider, err));
     }
-    return this._cache.get(id);
+    return this._providers.get(id) === provider ? this._cache.get(id) : null;
   }
 
   /**
@@ -190,20 +200,25 @@ export class ProviderRegistry {
       });
     }
 
+    const started = Date.now();
+    debugLog('registry', provider.id, 'fetch start');
+    const timeoutMs = provider.timeoutMs ?? PROVIDER_TIMEOUT_MS;
     return new Promise((resolve, reject) => {
       let settled = false;
       const timer = setTimeout(() => {
         if (!settled) {
           settled = true;
-          reject(new Error(`Provider ${provider.id} timed out after ${PROVIDER_TIMEOUT_MS}ms`));
+          reject(Object.assign(new Error(`Provider ${provider.id} timed out after ${timeoutMs}ms`),
+            {errorKind: 'timeout'}));
         }
-      }, PROVIDER_TIMEOUT_MS);
+      }, timeoutMs);
 
       provider.fetch(settings)
         .then(result => {
           if (!settled) {
             settled = true;
             clearTimeout(timer);
+            debugLog('registry', provider.id, 'fetch done in', Date.now() - started, 'ms status', result?.status);
             resolve(result);
           }
         })
@@ -211,6 +226,7 @@ export class ProviderRegistry {
           if (!settled) {
             settled = true;
             clearTimeout(timer);
+            debugLog('registry', provider.id, 'fetch threw after', Date.now() - started, 'ms', err?.message);
             reject(err);
           }
         });
@@ -232,5 +248,6 @@ export class ProviderRegistry {
     for (const provider of this._providers.values()) provider.destroy?.();
     this._providers.clear();
     this._cache.clear();
+    this._backoffUntil.clear();
   }
 }

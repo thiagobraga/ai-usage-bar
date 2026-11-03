@@ -1,7 +1,8 @@
 import GLib from 'gi://GLib';
-import {BaseProvider, AuthSource, ProviderStatus, makeResult, makeCapabilities} from '../provider.js';
-import {credentialState, parseClaudeUsage} from './usageData.js';
-import {UsageIO, UsageError, configDir, readJson, getUsage} from './usageIO.js';
+import { debugLog } from '../../core/debug.js';
+import { AuthSource, BaseProvider, ProviderStatus, makeCapabilities, makeResult } from '../../core/provider.js';
+import { credentialState, parseClaudeUsage } from '../shared/usageData.js';
+import { UsageError, UsageIO, configDir, getUsage, readJson } from '../shared/usageIO.js';
 
 const ENDPOINT = 'https://api.anthropic.com/api/oauth/usage';
 export default class ClaudeProvider extends BaseProvider {
@@ -22,6 +23,7 @@ export default class ClaudeProvider extends BaseProvider {
       return await this._io.run(async cancellable => {
         const credential = (await readJson(this._credentialPath, cancellable))?.claudeAiOauth;
         const state = credentialState(credential?.accessToken, credential?.expiresAt);
+        debugLog('claude', 'credential', this._credentialPath, 'state', state);
         if (state !== 'ready') throw new UsageError(state);
         const data = await getUsage(ENDPOINT, {
           Authorization: `Bearer ${credential.accessToken}`, 'anthropic-beta': 'oauth-2025-04-20',
@@ -34,7 +36,7 @@ export default class ClaudeProvider extends BaseProvider {
     } catch (error) {
       const code = error instanceof UsageError ? error.code : 'unavailable';
       return makeResult({...base, status: code === 'missing' ? ProviderStatus.UNCONFIGURED : ProviderStatus.ERROR,
-        errorKind: code, error: `Claude usage: ${code}. ${['expired', 'auth-error', 'missing'].includes(code) ? 'Sign in again with the Claude CLI.' : 'Usage unavailable.'}`});
+        errorKind: code, errorDetail: error?.detail ?? '', error: `Claude usage: ${code}. ${['expired', 'auth-error', 'missing'].includes(code) ? 'Sign in again with the Claude CLI.' : 'Usage unavailable.'}`});
     }
   }
   destroy() { this._io.destroy(); }

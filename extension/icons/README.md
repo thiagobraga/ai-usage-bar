@@ -5,3 +5,5 @@ Claude and OpenAI marks from Simple Icons v13 (CC0); Antigravity icon from the o
 - https://github.com/simple-icons/simple-icons/blob/13.0.0/LICENSE.md
 
 Claude/OpenAI: only fill colors changed. Brand marks remain trademarks of their respective owners.
+White Claude and Antigravity variants use the same outlines, recolored to match the Codex panel icon.
+OpenCode's compact dark-background logo is from https://opencode.ai/brand (`opencode-logo-dark.svg`); its redundant clip and mask wrappers were removed without changing its paths or colors. The mark is a trademark of its owner.

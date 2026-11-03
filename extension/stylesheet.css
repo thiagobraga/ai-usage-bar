@@ -2,6 +2,7 @@
 .ai-provider-meters { spacing: 6px; }
 .ai-brand-claude { color: #e87943; }
 .ai-brand-codex { color: #f6f5f1; }
+.ai-brand-antigravity { color: #8e75ff; }
 .ai-meters.vertical { spacing: 4px; }
 .ai-meters.horizontal { spacing: 3px; }
 .ai-meter-track { background-color: rgba(255,255,255,0.22); border-radius: 3px; }
@@ -15,5 +16,5 @@
 .ai-unicode.horizontal { font-size: 9px; }
 .ai-unicode.vertical { font-size: 5px; }
 .ai-unknown { color: #a7a9b1; font-size: 10px; }
-.ai-stale { color: #f5ad16; font-size: 10px; }
 .ai-source { font-size: 0.85em; color: #a7a9b1; }
+.ai-component-preview { min-width: 46px; padding: 3px 8px; margin: 0 8px; background-color: #303037; border-radius: 6px; }
