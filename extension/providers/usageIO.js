@@ -1,8 +1,8 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Soup from 'gi://Soup?version=3.0';
-import {parseCodexJsonl} from './usageData.js';
-import {debugLog, describeError} from '../debug.js';
+import { debugLog, describeError } from '../debug.js';
+import { parseCodexJsonl } from './usageData.js';
 
 const PRIORITY = GLib.PRIORITY_DEFAULT;
 export class UsageError extends Error {
@@ -53,16 +53,23 @@ export function asyncCall(object, method, finish, args) {
 async function close(stream) {
   try { await asyncCall(stream, 'close_async', 'close_finish', [PRIORITY, null]); } catch { /* Best effort. */ }
 }
-async function read(stream, cancellable, maxBytes) {
+// truncate: stop quietly at maxBytes (for tails of files that may still grow) instead of failing.
+async function read(stream, cancellable, maxBytes, truncate = false) {
   const chunks = [];
   let length = 0;
   while (length <= maxBytes) {
     const bytes = await asyncCall(stream, 'read_bytes_async', 'read_bytes_finish',
       [Math.min(65536, maxBytes + 1 - length), PRIORITY, cancellable]);
-    const chunk = bytes.get_data();
+    let chunk = bytes.get_data();
     if (!chunk.length) break;
+    if (length + chunk.length > maxBytes) {
+      if (!truncate) throw new UsageError('too-large');
+      chunk = chunk.subarray(0, maxBytes - length);
+      length = maxBytes;
+      if (chunk.length) chunks.push(chunk);
+      break;
+    }
     length += chunk.length;
-    if (length > maxBytes) throw new UsageError('too-large');
     chunks.push(chunk);
   }
   const all = new Uint8Array(length);
@@ -169,7 +176,7 @@ export async function latestCodexObservation(root, cancellable) {
       const info = await asyncCall(stream, 'query_info_async', 'query_info_finish', ['standard::size', PRIORITY, cancellable]);
       const start = Math.max(0, info.get_size() - 256 * 1024);
       stream.seek(start, GLib.SeekType.SET, cancellable);
-      let text = await read(stream, cancellable, 256 * 1024);
+      let text = await read(stream, cancellable, 256 * 1024, true);
       if (start > 0) {
         const newline = text.indexOf('\n');
         text = newline < 0 ? '' : text.slice(newline + 1);
