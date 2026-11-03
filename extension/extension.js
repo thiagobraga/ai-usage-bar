@@ -162,7 +162,7 @@ export default class AIUsageBarExtension extends Extension {
     const descriptions = [];
     for (const result of results) {
       const display = visibleComponents(result, visible, orientations, fallback);
-      if (!display.icon && !display.activity && !display.meters.length) continue;
+      if (!display.activity && !display.meters.length) continue;
       this._panelBox.add_child(providerMeters(result, this._settings.get_string('meter-style'),
         this.path, this._settings.get_boolean('white-icons'), display));
       descriptions.push(panelDescription(result, display));
