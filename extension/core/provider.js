@@ -3,11 +3,11 @@
  *
  * Every AI provider extends BaseProvider and implements fetch() which returns
  * a ProviderResult.  The extension never talks to specific provider details
- * directly — only through this interface.
+ * directly - only through this interface.
  */
 
 /**
- * Auth source types — how the provider obtains credentials / data.
+ * Auth source types - how the provider obtains credentials / data.
  * @enum {string}
  */
 export const AuthSource = Object.freeze({
@@ -36,17 +36,17 @@ export const ProviderStatus = Object.freeze({
  * Create a blank ProviderResult with safe defaults.
  *
  * Shape:
- *   id           — provider identifier
- *   label        — human-readable name
- *   icon         — single character / emoji for panel
- *   plan         — subscription tier label ('Free', 'Max', 'Pro', etc.)
- *   status       — ProviderStatus value
- *   lastUpdated  — Date or null
- *   sessions     — [{name, usedPercent, resetLabel}]
- *   cost         — {today, last30d, tokens} (string amounts)
- *   dashboardUrl — URL string or null
- *   statusUrl    — URL string or null
- *   error        — error message string or null
+ *   id           - provider identifier
+ *   label        - human-readable name
+ *   icon         - single character / emoji for panel
+ *   plan         - subscription tier label ('Free', 'Max', 'Pro', etc.)
+ *   status       - ProviderStatus value
+ *   lastUpdated  - Date or null
+ *   sessions     - [{name, usedPercent, resetLabel}]
+ *   cost         - {today, last30d, tokens} (string amounts)
+ *   dashboardUrl - URL string or null
+ *   statusUrl    - URL string or null
+ *   error        - error message string or null
  *
  * @param {Partial<ProviderResult>} overrides
  * @returns {ProviderResult}
@@ -69,7 +69,7 @@ export function makeResult(overrides = {}) {
 }
 
 /**
- * Capability flags — what data a provider can supply.
+ * Capability flags - what data a provider can supply.
  *
  * @param {object} flags
  * @returns {ProviderCapabilities}
@@ -95,8 +95,8 @@ export function makeCapabilities(flags = {}) {
  *   - async fetch(settings) → ProviderResult
  *
  * Optional overrides:
- *   - get isConfigured()  — default: true
- *   - get privacySources() — list of file paths / URLs the provider reads
+ *   - get isConfigured()  - default: true
+ *   - get privacySources() - list of file paths / URLs the provider reads
  */
 export class BaseProvider {
   /** @returns {string} Unique machine id, e.g. 'codex' */
@@ -139,10 +139,10 @@ export class BaseProvider {
   }
 
   /**
-   * Fetch current data from the provider.  Must not throw — return an
+   * Fetch current data from the provider.  Must not throw - return an
    * error result instead.
    *
-   * @param {object|null} settings — GSettings proxy or null
+   * @param {object|null} settings - GSettings proxy or null
    * @returns {Promise<ProviderResult>}
    */
   async fetch(_settings) {

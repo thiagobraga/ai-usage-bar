@@ -50,15 +50,15 @@ Run a single test file: `node --test extension/core/provider.test.js`
 
 ## Architecture
 
-GNOME Shell extension — all `extension/` code runs inside the Shell process as ES modules using GJS. No bundler, no transpilation. `gi://` imports are GNOME introspection bindings available only at runtime inside GNOME Shell.
+GNOME Shell extension - all `extension/` code runs inside the Shell process as ES modules using GJS. No bundler, no transpilation. `gi://` imports are GNOME introspection bindings available only at runtime inside GNOME Shell.
 
 ```
-extension.js           — Entry point (AIUsageBarExtension). Panel button, popup menu, refresh loop.
-prefs.js               — Adw settings UI (runs in separate process via gnome-extensions prefs).
-metadata.json, stylesheet.css, schemas/, icons/ — Required at the extension root. CSS is GNOME Shell CSS, not browser CSS. Compile schemas with glib-compile-schemas.
-core/                  — Logic with no St/Clutter. provider.js (BaseProvider, ProviderResult, enums), providerRegistry.js (cache, 5s per-provider timeout, backoff, error isolation), providerLoading.js (PROVIDERS list, lazy imports), usageAge.js, debug.js.
-ui/                    — Shell widgets and display rules. meterModel.js and panelComponents.js are pure (Node-testable); meterWidgets.js, panelMenu.js, panelMenuWidgets.js use St/Clutter.
-providers/             — One folder per AI provider (`providers/<name>/<name>.js` extends BaseProvider; OpenCode has extra auth and data modules). `shared/` has usageData.js (parsers) and usageIO.js (bounded I/O); `fixtures/` holds sample responses.
+extension.js           - Entry point (AIUsageBarExtension). Panel button, popup menu, refresh loop.
+prefs.js               - Adw settings UI (runs in separate process via gnome-extensions prefs).
+metadata.json, stylesheet.css, schemas/, icons/ - Required at the extension root. CSS is GNOME Shell CSS, not browser CSS. Compile schemas with glib-compile-schemas.
+core/                  - Logic with no St/Clutter. provider.js (BaseProvider, ProviderResult, enums), providerRegistry.js (cache, 5s per-provider timeout, backoff, error isolation), providerLoading.js (PROVIDERS list, lazy imports), usageAge.js, debug.js.
+ui/                    - Shell widgets and display rules. meterModel.js and panelComponents.js are pure (Node-testable); meterWidgets.js, panelMenu.js, panelMenuWidgets.js use St/Clutter.
+providers/             - One folder per AI provider (`providers/<name>/<name>.js` extends BaseProvider; OpenCode has extra auth and data modules). `shared/` has usageData.js (parsers) and usageIO.js (bounded I/O); `fixtures/` holds sample responses.
 ```
 
 Tests sit beside the modules they cover (`*.test.js`); `extension/metadata.test.js` covers packaging.
@@ -74,7 +74,7 @@ Tests sit beside the modules they cover (`*.test.js`); `extension/metadata.test.
 
 1. Create `extension/providers/<name>/<name>.js` extending `BaseProvider`.
 2. Override `id`, `label`, `icon`, `capabilities`, `authSource`, and `async fetch(settings)`.
-3. `fetch()` must never throw — return `makeResult({status: ProviderStatus.ERROR, error: ...})` on failure.
+3. `fetch()` must never throw - return `makeResult({status: ProviderStatus.ERROR, error: ...})` on failure.
 4. Add it to `PROVIDERS` in `extension/core/providerLoading.js` and to the provider rows in `extension/prefs.js`.
 5. Add fixtures to `extension/providers/fixtures/` and parser tests beside the relevant module (or `extension/core/provider.test.js` for shared contracts).
 
@@ -93,8 +93,8 @@ Fixture JSON files in `extension/providers/fixtures/` define the expected shape 
 ## Key constraints
 
 - All runtime extension code must be valid ES modules loadable by GJS (GNOME JavaScript engine). Node.js built-ins (`fs`, `path`, etc.) are allowed only in excluded `*.test.js` files.
-- `Gio`, `GLib`, `St`, `Clutter` etc. come from `gi://` — only available at GNOME Shell runtime.
-- `prefs.js` runs in a separate GTK process — cannot import `extension.js` or use Shell-only APIs.
+- `Gio`, `GLib`, `St`, `Clutter` etc. come from `gi://` - only available at GNOME Shell runtime.
+- `prefs.js` runs in a separate GTK process - cannot import `extension.js` or use Shell-only APIs.
 - Schema changes require recompiling (`glib-compile-schemas`) and reinstalling before they take effect.
 
 ## Plan Mode - Specs Convention
@@ -110,4 +110,4 @@ All AI agents (Claude, Codex, Antigravity, OpenCode) must follow this when enter
 
 ### This is NOT the Next.js you know
 
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
+This version has breaking changes - APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.

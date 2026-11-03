@@ -23,7 +23,7 @@ const redHatMono = Red_Hat_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'AI Usage Bar — AI provider usage in the panel',
+  title: 'AI Usage Bar - AI provider usage in the panel',
   description:
     'GNOME Shell 46 extension. Claude, Codex, Gemini, Cursor, OpenRouter usage, limits, reset windows, and cost. Always in the top panel.',
 }

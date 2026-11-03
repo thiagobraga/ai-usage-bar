@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Watch action. Source this file; do not run directly.
-# Requires: $NESTED (bool), $UUID, $SRC_DIR, $DEST_DIR — set by common.sh.
+# Requires: $NESTED (bool), $UUID, $SRC_DIR, $DEST_DIR - set by common.sh.
 
 watch_loop() {
   echo "[watch] watching $SRC_DIR for changes..."

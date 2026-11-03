@@ -12,7 +12,7 @@ All dev tooling for AI Usage Bar lives in `install.sh`. Run it from the project 
 |------|------|--------------|
 | | | Install once (default, no flags) |
 | `-w` | `--watch` | Watch `extension/` for changes, reinstall automatically |
-| `-n` | `--nested` | Launch a nested GNOME Shell window — extension logs stream to this terminal |
+| `-n` | `--nested` | Launch a nested GNOME Shell window - extension logs stream to this terminal |
 | `-s WxH` | `--size WxH` | Nested window size, e.g. `-n -s 1800x800` (sets `MUTTER_DEBUG_DUMMY_MODE_SPECS`) |
 | `-l` | `--logs` | Stream GNOME Shell logs (main session only) |
 | `-u` | `--uninstall` | Disable and remove the extension |
@@ -28,10 +28,10 @@ All dev tooling for AI Usage Bar lives in `install.sh`. Run it from the project 
 
 **Active development on Wayland (recommended):**
 ```bash
-# Terminal 1 — watch for file changes
+# Terminal 1 - watch for file changes
 ./scripts/install.sh -w -n
 
-# Terminal 2 — nested GNOME Shell (logs appear here after enabling the extension inside)
+# Terminal 2 - nested GNOME Shell (logs appear here after enabling the extension inside)
 # Inside the nested session:
 gnome-extensions enable ai-usage-bar@local
 ```
@@ -58,7 +58,7 @@ gnome-extensions enable ai-usage-bar@local
 
 | File | Functions |
 |------|-----------|
-| `src/common.sh` | `check_deps` — shared vars (`UUID`, `ROOT_DIR`, `DEST_DIR`, `ZIP_FILE`) |
+| `src/common.sh` | `check_deps` - shared vars (`UUID`, `ROOT_DIR`, `DEST_DIR`, `ZIP_FILE`) |
 | `install.sh` | `do_install` (zip → gnome-extensions CLI), `do_sync` (rsync for nested mode) |
 | `src/uninstall.sh` | `do_uninstall` |
 | `src/package.sh` | `do_package` |
@@ -73,7 +73,7 @@ gnome-extensions enable ai-usage-bar@local
 
 `do_install` uses `gnome-extensions install --force`, which wipes and recreates the extension directory. While the nested gnome-shell has those files open this causes errors. `do_sync` uses `rsync --delete` instead, which updates files in-place without removing the directory.
 
-## TODO — community lib/plugin
+## TODO - community lib/plugin
 
 This script solves a problem every GNOME extension developer hits: there is no standard dev toolchain. Future work:
 

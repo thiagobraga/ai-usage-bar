@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* ── Design tokens — dark (default) ─────────────────────────── */
+/* -- Design tokens - dark (default) --------------------------- */
 :root {
   --bg-0:       oklch(10.5% 0.012 262);
   --bg-1:       oklch(14.5% 0.014 262);
@@ -19,7 +19,7 @@
   --nav-border: oklch(26%   0.018 262 / 0.5);
 }
 
-/* ── Design tokens — light ───────────────────────────────────── */
+/* -- Design tokens - light ------------------------------------- */
 [data-theme="light"] {
   --bg-0:       oklch(97%   0.007 262);
   --bg-1:       oklch(93%   0.009 262);
@@ -38,7 +38,7 @@
   --nav-border: oklch(79%   0.014 262 / 0.7);
 }
 
-/* ── Tailwind theme bridge ───────────────────────────────────── */
+/* -- Tailwind theme bridge ------------------------------------- */
 @theme inline {
   --color-bg-0:      var(--bg-0);
   --color-bg-1:      var(--bg-1);
@@ -58,7 +58,7 @@
   --font-mono:       var(--font-red-hat-mono);
 }
 
-/* ── Base ────────────────────────────────────────────────────── */
+/* -- Base ------------------------------------------------------ */
 html {
   -webkit-font-smoothing: antialiased;
   scroll-behavior: smooth;
@@ -71,7 +71,7 @@ body {
   font-family: var(--font-red-hat-text), system-ui, sans-serif;
 }
 
-/* ── Scroll reveal ───────────────────────────────────────────── */
+/* -- Scroll reveal --------------------------------------------- */
 .reveal {
   opacity: 0;
   transform: translateY(20px);

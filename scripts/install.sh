@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# AI Usage Bar — dev entrypoint. See scripts/README.md for full docs.
+# AI Usage Bar - dev entrypoint. See scripts/README.md for full docs.
 #
 # Usage:
 #   ./scripts/install.sh [flags]
@@ -28,7 +28,7 @@ source "$SCRIPT_DIR/src/watch.sh"
 source "$SCRIPT_DIR/src/nested.sh"
 source "$SCRIPT_DIR/src/logs.sh"
 
-# ── Install actions ──────────────────────────────────────────────
+# Install actions --------------------------------------------------------------
 
 do_install() {
   glib-compile-schemas "$SRC_DIR/schemas"
@@ -40,14 +40,14 @@ do_install() {
   echo "[install] installed → $DEST_DIR"
 }
 
-# Fast sync for nested mode — avoids wiping the dir while gnome-shell has it open.
+# Fast sync for nested mode - avoids wiping the dir while gnome-shell has it open.
 do_sync() {
   glib-compile-schemas "$SRC_DIR/schemas" 2>/dev/null || true
   rsync -a --delete "$SRC_DIR/" "$DEST_DIR/"
   echo "[sync] synced → $DEST_DIR"
 }
 
-# ── Flags ─────────────────────────────────────────────────────────
+# Flags ------------------------------------------------------------------------
 
 WATCH=false
 NESTED=false
@@ -78,7 +78,7 @@ if [[ -n "$NESTED_SIZE" ]]; then
   $NESTED || echo "[warn] --size only applies with --nested; ignoring" >&2
 fi
 
-# One-shot actions — no install needed
+# One-shot actions - no install needed
 $UNINSTALL && { check_deps false false; do_uninstall; exit 0; }
 $PACKAGE   && { check_deps false false; do_package;   exit 0; }
 $TESTS     && { do_tests; exit 0; }
