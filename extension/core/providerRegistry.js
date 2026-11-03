@@ -59,7 +59,7 @@ export class ProviderRegistry {
 
   /**
    * Return providers whose id is in the `enabled-providers` GSettings value.
-   * @param {object} settings — GSettings proxy with get_strv('enabled-providers')
+   * @param {object} settings - GSettings proxy with get_strv('enabled-providers')
    * @returns {import('./provider.js').BaseProvider[]}
    */
   getEnabled(settings) {
@@ -94,7 +94,7 @@ export class ProviderRegistry {
    * Refresh all enabled providers concurrently.  Each provider gets its own
    * timeout; a failing provider does not block others.
    *
-   * @param {object} settings — GSettings proxy
+   * @param {object} settings - GSettings proxy
    * @returns {Promise<Map<string, import('./provider.js').ProviderResult>>}
    */
   async refreshAll(settings, ids = null, onResult = null) {

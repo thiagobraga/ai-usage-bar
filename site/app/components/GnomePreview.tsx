@@ -34,7 +34,7 @@ export function GnomePreview() {
 
   const light = mounted && resolvedTheme === 'light'
 
-  // Popup palette — flips with page theme
+  // Popup palette - flips with page theme
   const p = light ? {
     screen:    'oklch(91% 0.010 262)',
     topbar:    'oklch(86% 0.012 262)',

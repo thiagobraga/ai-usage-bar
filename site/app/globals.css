@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* ── Design tokens — dark (default) ─────────────────────────── */
+/* ── Design tokens - dark (default) ─────────────────────────── */
 :root {
   --bg-0:       oklch(10.5% 0.012 262);
   --bg-1:       oklch(14.5% 0.014 262);
@@ -19,7 +19,7 @@
   --nav-border: oklch(26%   0.018 262 / 0.5);
 }
 
-/* ── Design tokens — light ───────────────────────────────────── */
+/* ── Design tokens - light ───────────────────────────────────── */
 [data-theme="light"] {
   --bg-0:       oklch(97%   0.007 262);
   --bg-1:       oklch(93%   0.009 262);
