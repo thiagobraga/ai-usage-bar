@@ -5,5 +5,5 @@
   "shell-version": ["46"],
   "version": 1,
   "settings-schema": "org.gnome.shell.extensions.ai-usage-bar",
-  "url": "https://github.com/local/ai-usage-bar"
+  "url": "https://github.com/thiagobraga/ai-usage-bar"
 }

@@ -8,6 +8,7 @@ import { setDebug } from './core/debug.js';
 import { providerMeters } from './ui/meterWidgets.js';
 import { buildPanelMenu } from './ui/panelMenu.js';
 import * as dashboardWidgets from './ui/dashboardWidgets.js';
+import { showAbout } from './ui/aboutDialog.js';
 import { panelDescription, visibleComponents } from './ui/panelComponents.js';
 import { makeResult } from './core/provider.js';
 import { ProviderRegistry } from './core/providerRegistry.js';
@@ -198,6 +199,10 @@ export default class AIUsageBarExtension extends Extension {
         },
         refresh: () => this._doRefresh(),
         settings: () => this.openPreferences(),
+        about: () => {
+          this._indicator.menu.close();
+          showAbout(this.metadata);
+        },
       });
   }
 }
