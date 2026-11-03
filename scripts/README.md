@@ -12,7 +12,7 @@ All dev tooling for AI Usage Bar lives in `install.sh`. Run it from the project 
 |------|------|--------------|
 | | | Install once (default, no flags) |
 | `-w` | `--watch` | Watch `extension/` for changes, reinstall automatically |
-| `-n` | `--nested` | Launch a nested GNOME Shell window - extension logs stream to this terminal |
+| `-n` | `--nested` | Launch a nested GNOME Shell window with isolated settings - extension logs stream to this terminal |
 | `-s WxH` | `--size WxH` | Nested window size, e.g. `-n -s 1800x800` (sets `MUTTER_DEBUG_DUMMY_MODE_SPECS`) |
 | `-l` | `--logs` | Stream GNOME Shell logs (main session only) |
 | `-u` | `--uninstall` | Disable and remove the extension |
@@ -28,13 +28,11 @@ All dev tooling for AI Usage Bar lives in `install.sh`. Run it from the project 
 
 **Active development on Wayland (recommended):**
 ```bash
-# Terminal 1 - watch for file changes
 ./scripts/install.sh -w -n
-
-# Terminal 2 - nested GNOME Shell (logs appear here after enabling the extension inside)
-# Inside the nested session:
-gnome-extensions enable ai-usage-bar@local
 ```
+Watches `extension/` for changes and opens a nested GNOME Shell window, logs streaming to
+the same terminal. The extension (plus dash-to-panel) is auto-enabled; every file change is
+synced and the extension is reloaded inside the nested session.
 
 **Active development on X11:**
 ```bash
@@ -52,6 +50,22 @@ gnome-extensions enable ai-usage-bar@local
 # Produces ai-usage-bar@local.zip in the project root
 ```
 
+## Nested session behavior (`-n`)
+
+The nested shell runs with **isolated settings**: it uses its own dconf database
+(`~/.config/dconf/ai_usage_bar_nested`, profile in `~/.local/state/ai-usage-bar/nested-dconf/`)
+that is re-seeded from the main session's extension preferences on every launch. Enabling
+extensions or changing prefs inside the nested session never touches the main session.
+
+- **Enabled extensions** - `ai-usage-bar@local` plus `$NESTED_EXTENSIONS` (default:
+  `dash-to-panel@jderose9.github.com`). UUIDs that are not installed are skipped with a warning.
+- **Session mode** - `$NESTED_MODE` (default: `user`). The Ubuntu session mode
+  (`ubuntu`) force-enables ding (desktop icons), ubuntu-dock, appindicators and
+  tiling-assistant, which fight dash-to-panel; `user` skips them.
+- **Watch reload** - with `-w -n`, changed files are synced and the extension is
+  disabled/enabled inside the nested session over its private bus (address recorded in
+  `~/.local/state/ai-usage-bar/nested-dconf/bus-address`).
+
 ## Architecture
 
 `install.sh` is a thin dispatcher. All action logic lives in `src/`:
@@ -63,8 +77,8 @@ gnome-extensions enable ai-usage-bar@local
 | `src/uninstall.sh` | `do_uninstall` |
 | `src/package.sh` | `do_package` |
 | `src/tests.sh` | `do_tests` |
-| `src/watch.sh` | `watch_loop` |
-| `src/nested.sh` | `launch_nested` |
+| `src/watch.sh` | `watch_loop` - re-syncs on change; reloads inside the nested session |
+| `src/nested.sh` | `nested_prepare_dconf`, `nested_reload_extension`, `launch_nested` |
 | `src/logs.sh` | `stream_logs` |
 
 `install.sh` sources all `src/` files at startup, then calls the right functions based on flags.
