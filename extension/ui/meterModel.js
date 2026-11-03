@@ -51,6 +51,13 @@ export function meterOrientation(orientation) {
   return orientation === 'vertical' ? 'vertical' : 'horizontal';
 }
 
+// Per-meter override ("id=vertical"/"id=horizontal") wins over the default orientation.
+export function orientationFor(id, overrides, fallback) {
+  if (overrides.includes(`${id}=vertical`)) return 'vertical';
+  if (overrides.includes(`${id}=horizontal`)) return 'horizontal';
+  return fallback;
+}
+
 export function compactTokens(value) {
   if (!Number.isFinite(value) || value < 0) return '-';
   if (value < 1000) return String(value);

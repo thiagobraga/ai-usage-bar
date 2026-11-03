@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {meterValue, meterSeverity, meterColor, unicodeSegments, meterOrientation, usageSummary, compactTokens} from './meterModel.js';
+import {meterValue, meterSeverity, meterColor, unicodeSegments, meterOrientation, usageSummary, compactTokens, orientationFor} from './meterModel.js';
 import {componentChoices, visibleComponents, panelDescription} from './panelComponents.js';
 
 const result = (percent, status = 'ok') => ({label: 'Claude', status,
@@ -131,4 +131,10 @@ test('OpenCode activity can be hidden independently of its icon; unknown ids are
   assert.deepEqual(visibleComponents(data, ['opencode:activity', 'opencode:unknown'], [], 'horizontal'),
     {icon: false, activity: true, meters: []});
   assert.equal(panelDescription(data, {icon: false, activity: true, meters: []}), 'OpenCode, 1,200 tokens in 7 days');
+});
+
+test('orientationFor lets a per-meter override beat the default', () => {
+  assert.equal(orientationFor('claude:Session', ['claude:Session=vertical'], 'horizontal'), 'vertical');
+  assert.equal(orientationFor('claude:Session', ['claude:Session=horizontal'], 'vertical'), 'horizontal');
+  assert.equal(orientationFor('claude:Weekly', ['claude:Session=vertical'], 'horizontal'), 'horizontal');
 });

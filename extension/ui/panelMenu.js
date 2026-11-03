@@ -1,3 +1,4 @@
+import {orientationFor} from './meterModel.js';
 import {componentChoices} from './panelComponents.js';
 
 // Sections stay in the main popup; no native submenu or overlay is used for Components.
@@ -75,12 +76,8 @@ export function buildPanelMenu(menu, results, settings, PopupMenu, widgets, acti
       actions.preview(toggle, result, choice);
       previewRows.set(choice.id, {row: toggle, choice});
       if (choice.kind !== 'meter') continue;
-      const orientation = () => {
-        const overrides = settings.get_strv('panel-orientations');
-        return overrides.includes(`${choice.id}=vertical`) ? 'vertical'
-          : overrides.includes(`${choice.id}=horizontal`) ? 'horizontal'
-            : settings.get_string('meter-orientation');
-      };
+      const orientation = () => orientationFor(choice.id, settings.get_strv('panel-orientations'),
+        settings.get_string('meter-orientation'));
       const row = new widgets.NavigationItem(`Orientation: ${orientation() === 'vertical' ? 'Vertical' : 'Horizontal'}`, () => {
         const next = orientation() === 'vertical' ? 'horizontal' : 'vertical';
         actions.setOrientation(choice.id, next);

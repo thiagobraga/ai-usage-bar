@@ -1,4 +1,4 @@
-import {meterOrientation, meterValue} from './meterModel.js';
+import {meterOrientation, meterValue, orientationFor} from './meterModel.js';
 
 const WINDOWS = ['Session', 'Weekly'];
 const ANTIGRAVITY = [
@@ -22,15 +22,13 @@ export function componentChoices(result) {
 
 export function visibleComponents(result, visible, orientations, defaultOrientation) {
   const selected = new Set(visible);
-  const overrides = new Set(orientations);
   const choices = componentChoices(result);
   return {
     icon: selected.has(`${result.id}:icon`),
     activity: result.id === 'opencode' && selected.has('opencode:activity'),
     meters: choices.filter(choice => choice.kind === 'meter' && selected.has(choice.id))
       .map(choice => ({name: choice.name, orientation: meterOrientation(
-        overrides.has(`${choice.id}=vertical`) ? 'vertical'
-          : overrides.has(`${choice.id}=horizontal`) ? 'horizontal' : defaultOrientation)})),
+        orientationFor(choice.id, orientations, defaultOrientation))})),
   };
 }
 
