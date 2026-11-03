@@ -1,5 +1,5 @@
 <p align="center">
-  <img src=".github/assets/ai-usage-bar.png" width="250" alt="AI Usage Bar GNOME extension logo" />
+  <img src=".github/assets/ai-usage-bar-transparent.png" width="250" alt="AI Usage Bar GNOME extension logo" />
 </p>
 
 <h1 align="center">AI Usage Bar</h1>
@@ -20,6 +20,8 @@ npm test                         # parser, meter, registry and metadata tests
 After installing changed JavaScript, restart the Shell on X11 or log out/in on Wayland. Recompiling schemas and installing is handled by the script. See [scripts/README.md](scripts/README.md).
 
 Click the panel indicator to see usage for each enabled provider. On quota cards the center shows the percentage of the five-hour limit used. The outer ring tracks five-hour usage and the inner ring tracks weekly usage. OpenCode activity shows its seven-day token count.
+
+When the indicator is on the right side of the top bar, the popup aligns to its right edge and grows leftward.
 
 Expand a provider row to see its limits and reset times. Select any combination of component previews to show them together in the top bar. The switch beside the provider name turns the whole provider off or on and remembers its component choices. Use **Settings → Panel meters** for default appearance. OpenCode is one provider: its row shows 7-day token activity and, when OpenCode is signed in to ChatGPT, the OpenAI 5-hour and weekly quota of the active account.
 
