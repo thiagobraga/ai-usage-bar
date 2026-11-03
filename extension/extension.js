@@ -1,25 +1,32 @@
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
-import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
-import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
+import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
-import {ProviderRegistry} from './providerRegistry.js';
-import {makeResult} from './provider.js';
-import ClaudeProvider from './providers/claude.js';
-import CodexProvider from './providers/codex.js';
-import {providerMeters} from './meterWidgets.js';
-import {usageSummary} from './meterModel.js';
-import {STALE_AFTER_MS} from './providers/usageData.js';
+import { setDebug } from './debug.js';
+import { providerMeters } from './meterWidgets.js';
+import { buildPanelMenu } from './panelMenu.js';
+import { NavigationItem, PersistentSwitch, previewComponent } from './panelMenuWidgets.js';
+import { panelDescription, visibleComponents } from './panelComponents.js';
+import { makeResult } from './provider.js';
+import { ProviderRegistry } from './providerRegistry.js';
+import { PROVIDERS, ProviderLoading, visibleProviderIds } from './providerLoading.js';
+import { STALE_AFTER_MS } from './usageAge.js';
 
 export default class AIUsageBarExtension extends Extension {
   enable() {
     this._settings = this.getSettings();
+    this._refreshQueued = false;
+    setDebug(this._settings.get_boolean('debug-logging'));
     this._registry = new ProviderRegistry();
-    this._registry.register(new ClaudeProvider());
-    this._registry.register(new CodexProvider());
+    this._loading = new ProviderLoading(this._registry, async id => {
+      const descriptor = PROVIDERS.find(provider => provider.id === id);
+      if (!descriptor) throw new Error(`Unknown provider: ${id}`);
+      const module = await descriptor.load();
+      return new module.default();
+    });
     const isRtl = Clutter.get_default_text_direction() === Clutter.TextDirection.RTL;
     this._indicator = new PanelMenu.Button(0.0, this.metadata.name, false);
     this._indicator.menu.setSourceAlignment(isRtl ? 1.0 : 0.0);
@@ -27,13 +34,22 @@ export default class AIUsageBarExtension extends Extension {
     this._indicator.add_child(this._panelBox);
     Main.panel.addToStatusArea(this.uuid, this._indicator);
     this._settingsChangedId = this._settings.connect('changed', (_settings, key) => {
+      if (key === 'debug-logging') setDebug(this._settings.get_boolean('debug-logging'));
       this._updatePanel();
-      this._buildMenu();
       if (key === 'refresh-interval-seconds') this._startRefreshLoop();
-      if (key === 'enabled-providers') this._doRefresh();
+      if (['enabled-providers', 'panel-components'].includes(key)) {
+        if (!this._indicator.menu.isOpen) this._loading.sync(visibleProviderIds(this._settings));
+        if (key === 'enabled-providers' && !this._indicator.menu.isOpen) this._buildMenu();
+        this._doRefresh();
+      }
     });
-    this._indicator.menu.connect('open-state-changed', (_menu, open) => {
-      if (open) this._buildMenu();
+    this._menuStateId = this._indicator.menu.connect('open-state-changed', (_menu, open) => {
+      if (!open) {
+        this._disposeMenu?.();
+        this._disposeMenu = null;
+        this._loading.sync(visibleProviderIds(this._settings));
+        this._buildMenu();
+      }
     });
     this._updatePanel();
     this._buildMenu();
@@ -51,12 +67,18 @@ export default class AIUsageBarExtension extends Extension {
     if (this._ageTimer) GLib.source_remove(this._ageTimer);
     this._ageTimer = null;
     this._settings?.disconnect(this._settingsChangedId);
-    this._registry?.destroy();
+    this._indicator?.menu.disconnect(this._menuStateId);
+    this._disposeMenu?.();
+    this._disposeMenu = null;
+    this._loading?.destroy();
+    this._loading = null;
     this._registry = null;
     this._refreshing = null;
+    this._refreshQueued = false;
     this._indicator?.destroy();
     this._indicator = null;
     this._settings = null;
+    setDebug(false);
   }
 
   _startRefreshLoop() {
@@ -76,21 +98,45 @@ export default class AIUsageBarExtension extends Extension {
 
   async _doRefresh() {
     const registry = this._registry;
-    if (!registry || this._refreshing === registry) return;
+    if (!registry) return;
+    if (this._refreshing === registry) {
+      this._refreshQueued = true;
+      return;
+    }
     this._refreshing = registry;
     try {
-      await registry.refreshAll(this._settings);
+      const ids = visibleProviderIds(this._settings);
+      const imports = await Promise.allSettled(ids.map(id => this._loading.ensure(id)));
+      for (const outcome of imports) {
+        if (outcome.status === 'rejected')
+          console.warn(`[ai-usage-bar] provider load failed: ${outcome.reason?.message ?? outcome.reason}`);
+      }
       if (this._registry !== registry) return;
+      await registry.refreshAll(this._settings, visibleProviderIds(this._settings), () => {
+        if (this._registry !== registry) return;
+        this._updatePanel();
+        for (const result of this._results()) this._disposeMenu?.update(result);
+      });
+      if (this._registry !== registry) return;
+      // Final pass covers backed-off providers that emitted no per-provider update.
       this._updatePanel();
-      this._buildMenu();
+      for (const result of this._results()) this._disposeMenu?.update(result);
+    } catch (error) {
+      console.warn(`[ai-usage-bar] provider load failed: ${error?.message ?? error}`);
     } finally {
-      if (this._refreshing === registry) this._refreshing = null;
+      if (this._refreshing === registry) {
+        this._refreshing = null;
+        if (this._refreshQueued) {
+          this._refreshQueued = false;
+          this._doRefresh();
+        }
+      }
     }
   }
 
   _results() {
     const enabled = this._settings.get_strv('enabled-providers');
-    return this._registry.getAll().filter(provider => enabled.includes(provider.id)).map(provider => {
+    return PROVIDERS.filter(provider => enabled.includes(provider.id)).map(provider => {
       const cached = this._registry.getCached(provider.id);
       const result = cached ?? makeResult({id: provider.id, label: provider.label,
         error: this._refreshing ? 'Checking usage…' : 'Usage unavailable'});
@@ -103,54 +149,57 @@ export default class AIUsageBarExtension extends Extension {
     if (!this._indicator) return;
     this._panelBox.destroy_all_children();
     const results = this._results();
+    const visible = this._settings.get_strv('panel-components');
+    const orientations = this._settings.get_strv('panel-orientations');
+    const fallback = this._settings.get_string('meter-orientation');
+    const descriptions = [];
     for (const result of results) {
+      const display = visibleComponents(result, visible, orientations, fallback);
+      if (!display.icon && !display.activity && !display.meters.length) continue;
       this._panelBox.add_child(providerMeters(result, this._settings.get_string('meter-style'),
-        this._settings.get_string('meter-orientation'), this.path));
+        this.path, this._settings.get_boolean('white-icons'), display));
+      descriptions.push(panelDescription(result, display));
     }
-    if (!results.length) this._panelBox.add_child(new St.Label({text: 'AI —'}));
-    this._indicator.accessible_name = results.map(result => usageSummary(result)).join('; ') || 'AI usage: no providers enabled';
+    // Keep the menu reachable when everything has been turned off.
+    if (!descriptions.length) this._panelBox.add_child(new St.Label({text: 'AI',
+      y_align: Clutter.ActorAlign.CENTER}));
+    this._indicator.accessible_name = descriptions.join('; ') || 'AI usage: no panel components selected';
+  }
+
+  _setPanelComponent(id, enabled) {
+    const selected = this._settings.get_strv('panel-components').filter(value => value !== id);
+    if (enabled) selected.push(id);
+    this._settings.set_strv('panel-components', selected);
+  }
+
+  _setPanelOrientation(id, orientation) {
+    const selected = this._settings.get_strv('panel-orientations')
+      .filter(value => value !== `${id}=horizontal` && value !== `${id}=vertical`);
+    selected.push(`${id}=${orientation}`);
+    this._settings.set_strv('panel-orientations', selected);
   }
 
   _buildMenu() {
     if (!this._indicator) return;
     const menu = this._indicator.menu;
+    this._disposeMenu?.();
     menu.removeAll();
-    // A small status/launch menu; the detailed dashboard is deferred.
-    for (const result of this._results()) {
-      menu.addMenuItem(new PopupMenu.PopupMenuItem(usageSummary(result), {reactive: false}));
-      const updated = result.lastUpdated ? result.lastUpdated.toLocaleString() : 'never';
-      const text = `${result.source || 'Provider usage'} · Updated ${updated}`;
-      const detail = new PopupMenu.PopupMenuItem(text, {reactive: false});
-      detail.add_style_class_name('ai-source');
-      menu.addMenuItem(detail);
-      if (result.error) {
-        const warning = new PopupMenu.PopupMenuItem(result.error, {reactive: false});
-        warning.add_style_class_name('ai-source');
-        menu.addMenuItem(warning);
-      }
-    }
-    menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-    menu.addAction('Refresh usage', () => this._doRefresh());
-    menu.addAction('Open Claude Desktop…', () => {
-      try {
-        const app = Gio.DesktopAppInfo.new('com.anthropic.Claude.desktop');
-        if (!app) throw new Error('Claude Desktop is not installed.');
-        app.launch([], global.create_app_launch_context(0, -1));
-      } catch (error) {
-        Main.notifyError('AI Usage Bar', error.message);
-      }
-    });
-    menu.addAction('Open Claude on web…', () => this._openUrl('https://claude.ai'));
-    menu.addAction('Open Codex on web…', () => this._openUrl('https://chatgpt.com/codex'));
-    menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-    menu.addAction('Settings…', () => this.openPreferences());
-  }
-
-  _openUrl(url) {
-    Gio.AppInfo.launch_default_for_uri_async(url, global.create_app_launch_context(0, -1),
-      null, (_source, result) => {
-        try { Gio.AppInfo.launch_default_for_uri_finish(result); }
-        catch (error) { Main.notifyError('AI Usage Bar', error.message); }
+    this._disposeMenu = buildPanelMenu(menu, this._results(), this._settings, PopupMenu,
+      {NavigationItem, PersistentSwitch}, {
+        setComponent: (id, state) => this._setPanelComponent(id, state),
+        setOrientation: (id, value) => this._setPanelOrientation(id, value),
+        load: async id => {
+          const provider = await this._loading.ensure(id);
+          if (!provider || !this._indicator?.menu.isOpen) return null;
+          return this._registry.getCached(id) ?? await this._registry.refreshOne(id, this._settings);
+        },
+        release: (keep = null) => this._loading.sync([
+          ...visibleProviderIds(this._settings), ...(keep ? [keep] : []),
+        ]),
+        preview: (row, result, choice) => previewComponent(row, result, choice, this._settings, this.path),
+        updatePreview: (row, result, choice) => previewComponent(row, result, choice, this._settings, this.path),
+        refresh: () => this._doRefresh(),
+        settings: () => this.openPreferences(),
       });
   }
 }
