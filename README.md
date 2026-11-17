@@ -1,5 +1,10 @@
 <p align="center">
-  <img src=".github/assets/ai-usage-bar-transparent.png" width="250" alt="AI Usage Bar GNOME extension logo" />
+  <!-- Preserve transparency in both logo variants. -->
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/ai-usage-bar-transparent-dark.png" />
+    <source media="(prefers-color-scheme: light)" srcset=".github/assets/ai-usage-bar-transparent.png" />
+    <img src=".github/assets/ai-usage-bar-transparent.png" width="250" alt="AI Usage Bar GNOME extension logo" />
+  </picture>
 </p>
 
 <h1 align="center">AI Usage Bar</h1>
